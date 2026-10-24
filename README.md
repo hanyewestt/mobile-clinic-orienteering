@@ -68,9 +68,10 @@ returns a `CoverageChange` whenever a stop is accepted.
 
 ### `src/routing/`
 
-Contains shared route operations: route-length calculation, cheapest insertion,
-budget checks, deferred-site refill, and 2-opt route polishing. Both approaches
-must use this shared code for a fair comparison.
+Contains shared route operations. `RouteCalculator` calculates closed-route
+lengths and checks budgets; `CheapestInsertion` finds the lowest-cost insertion;
+and `TwoOptPolisher` improves a route with a capped number of 2-opt passes.
+Both approaches must use this shared code for a fair comparison.
 
 ### `src/algorithms/`
 
