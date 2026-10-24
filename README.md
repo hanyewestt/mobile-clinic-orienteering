@@ -85,6 +85,8 @@ instances of at most 15 candidate stops.
 
 Contains repeatable experiment code: configurations, budget/radius sweeps,
 lazy-versus-full comparisons, synthetic-data generation, and result collection.
+`ExperimentRunner` currently runs and exports one Approach A scenario as
+`summary.csv`, `route-stops.csv`, and `result.json`.
 
 ### `test/`
 
