@@ -49,9 +49,9 @@ These classes should not contain algorithm logic.
 
 ### `src/data/`
 
-Contains code that reads and prepares the dataset. `DataPreprocessor` currently
-creates the processed CSV files; `GeoNamesReader` and `InstanceLoader` will
-later read those files into the model classes.
+Contains code that reads and prepares the dataset. `DataPreprocessor` creates
+the processed CSV files; `ProcessedInstanceLoader` reads those files into a
+`ProblemInstance` for the solvers.
 
 ### `src/geometry/`
 
@@ -75,14 +75,18 @@ Both approaches must use this shared code for a fair comparison.
 
 ### `src/algorithms/`
 
-Contains the solvers only: the `RoutingSolver` interface, Approach A
-(`LazyGreedySolver`), Approach B (`GridClusterSolver`), and the small-instance
-`HeldKarpSolver` baseline.
+Contains the solvers only. `RoutingSolver` is the common interface;
+`LazyGreedySolver` implements Approach A in lazy and full-recompute modes and
+returns `ApproachAResult` statistics for the comparison experiment.
+`HeldKarpSolver` is an exact baseline restricted to small, hand-checkable
+instances of at most 15 candidate stops.
 
 ### `src/experiments/`
 
 Contains repeatable experiment code: configurations, budget/radius sweeps,
 lazy-versus-full comparisons, synthetic-data generation, and result collection.
+`ExperimentRunner` currently runs and exports one Approach A scenario as
+`summary.csv`, `route-stops.csv`, and `result.json`.
 
 ### `test/`
 

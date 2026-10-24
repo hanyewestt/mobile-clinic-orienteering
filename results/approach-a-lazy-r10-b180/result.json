@@ -1,0 +1,23 @@
+{
+  "runName": "approach-a-lazy-r10-b180",
+  "algorithm": "Approach A - route-aware lazy greedy",
+  "scenario": {
+    "serviceRadiusKm": 10.000000,
+    "travelBudgetKm": 180.000000,
+    "depot": {"latitude": 3.141200, "longitude": 101.686500}
+  },
+  "result": {
+    "populationCovered": 12413701,
+    "townsCovered": 99,
+    "routeLengthKm": 177.479101,
+    "runtimeMillis": 6563,
+    "routeStopIds": [12916, 6935, 13549, 13648, 13464, 13187, 6366, 13789, 13910, 186, 6961, 13885, 2844, 4703, 7339, 6964, 12929, 699, 13849, 1281, 13379, 1218, 13420, 1331, 701]
+  },
+  "statistics": {
+    "candidateEvaluations": 22623,
+    "heapPops": 11950,
+    "deferredStops": 10673,
+    "refilledStops": 0,
+    "twoOptImprovements": 0
+  }
+}

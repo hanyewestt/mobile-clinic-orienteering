@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mobile Clinic Routing Lab</title>
+  <style>
+    :root {
+      --ink: #15251f;
+      --muted: #64736d;
+      --line: #dbe5df;
+      --paper: #f7faf7;
+      --panel: #ffffff;
+      --teal: #0d8073;
+      --teal-soft: #c8eee7;
+      --orange: #e97833;
+      --orange-soft: #ffe1cd;
+      --grey-dot: #b8c5bd;
+      --shadow: 0 16px 45px rgba(32, 65, 53, .10);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      color: var(--ink);
+      background: var(--paper);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .shell { max-width: 1420px; margin: 0 auto; padding: 30px; }
+    header { display: flex; justify-content: space-between; gap: 24px; align-items: flex-start; margin-bottom: 24px; }
+    .eyebrow { margin: 0 0 9px; color: var(--teal); font-size: .76rem; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+    h1 { margin: 0; max-width: 730px; font-family: Georgia, "Times New Roman", serif; font-size: clamp(2.2rem, 4vw, 4.4rem); font-weight: 500; line-height: .96; letter-spacing: -.055em; }
+    .subhead { max-width: 650px; margin: 18px 0 0; color: var(--muted); font-size: 1rem; line-height: 1.6; }
+    .status { display: inline-flex; align-items: center; white-space: nowrap; padding: 10px 13px; gap: 8px; background: #e9f6ef; border: 1px solid #c7ead6; border-radius: 999px; color: #276746; font-size: .82rem; font-weight: 700; }
+    .pulse { width: 8px; height: 8px; border-radius: 50%; background: #3dab63; box-shadow: 0 0 0 4px rgba(61,171,99,.14); }
+
+    .controls, .map-card, .results-card, .insight { background: var(--panel); border: 1px solid var(--line); box-shadow: var(--shadow); }
+    .controls { display: grid; grid-template-columns: 1.55fr 1fr 1fr; gap: 0; overflow: hidden; border-radius: 18px; margin-bottom: 22px; }
+    .control { min-height: 104px; padding: 20px 24px; border-right: 1px solid var(--line); }
+    .control:last-child { border-right: none; }
+    .control-label { display: block; margin-bottom: 11px; color: var(--muted); font-size: .75rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+    .tabs { display: flex; gap: 8px; }
+    button { border: 0; font: inherit; cursor: pointer; }
+    .tab { padding: 10px 14px; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: var(--muted); font-size: .9rem; font-weight: 750; transition: .18s ease; }
+    .tab.active, .tab:hover { border-color: var(--teal); background: var(--teal); color: #fff; }
+    .tab:disabled { cursor: not-allowed; border-color: var(--line); background: #f2f5f3; color: #9aa8a0; }
+    .range-line { display: flex; align-items: center; gap: 12px; }
+    input[type="range"] { width: 100%; accent-color: var(--teal); }
+    output { min-width: 64px; color: var(--ink); font-size: 1.1rem; font-weight: 800; text-align: right; }
+    .hint { margin: 7px 0 0; color: var(--muted); font-size: .78rem; }
+
+    .dashboard { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(305px, .8fr); gap: 22px; }
+    .map-card { overflow: hidden; border-radius: 18px; }
+    .card-top { display: flex; align-items: center; justify-content: space-between; padding: 19px 22px 16px; border-bottom: 1px solid var(--line); }
+    .card-title { margin: 0; font-size: 1rem; font-weight: 800; }
+    .legend { display: flex; flex-wrap: wrap; gap: 12px; color: var(--muted); font-size: .73rem; }
+    .legend-item { display: inline-flex; align-items: center; gap: 5px; }
+    .legend-dot { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+    .legend-line { width: 18px; height: 3px; display: inline-block; border-radius: 2px; }
+    .map-stage { min-height: 540px; padding: 15px; background: linear-gradient(135deg, #f3faf7, #fafffd); }
+    svg { width: 100%; height: 100%; min-height: 510px; display: block; border-radius: 12px; background: #eaf3ec; }
+    .region { fill: #d8ead7; stroke: #b5d1bc; stroke-width: 2; }
+    .water-line { fill: none; stroke: #c0ded8; stroke-width: 1.4; opacity: .8; }
+    .map-label { fill: #6a7c70; font-size: 11px; font-weight: 700; letter-spacing: .06em; }
+    .service-ring { fill: var(--teal); fill-opacity: .10; stroke: var(--teal); stroke-opacity: .38; stroke-width: 1.5; stroke-dasharray: 4 4; }
+    .demand { fill: var(--grey-dot); stroke: #fff; stroke-width: 1.4; opacity: .95; }
+    .demand.covered { fill: var(--teal); }
+    .route { fill: none; stroke: var(--orange); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 8 6; filter: drop-shadow(0 3px 2px rgba(137,68,24,.18)); }
+    .stop { fill: var(--orange); stroke: #fff; stroke-width: 3; }
+    .stop-number { fill: #fff; font-size: 10px; font-weight: 800; text-anchor: middle; dominant-baseline: middle; }
+    .depot { fill: #15251f; stroke: #fff; stroke-width: 3; }
+    .depot-star { fill: #fff; font-size: 14px; text-anchor: middle; dominant-baseline: middle; }
+    .map-key { fill: #fff; stroke: var(--line); stroke-width: 1; }
+    .map-key-text { fill: #4c6258; font-size: 11px; font-weight: 700; }
+
+    .side { display: grid; gap: 22px; align-content: start; }
+    .results-card, .insight { border-radius: 18px; padding: 22px; }
+    .algorithm-tag { display: inline-flex; margin-bottom: 12px; padding: 6px 9px; border-radius: 999px; background: var(--teal-soft); color: #075e55; font-size: .72rem; font-weight: 850; letter-spacing: .06em; text-transform: uppercase; }
+    .results-card h2 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: 1.75rem; font-weight: 500; letter-spacing: -.03em; }
+    .results-card p { margin: 7px 0 20px; color: var(--muted); line-height: 1.5; font-size: .9rem; }
+    .metric-list { display: grid; gap: 0; border-top: 1px solid var(--line); }
+    .metric { display: flex; justify-content: space-between; align-items: baseline; padding: 14px 0; border-bottom: 1px solid var(--line); }
+    .metric span { color: var(--muted); font-size: .83rem; }
+    .metric strong { font-size: 1.15rem; letter-spacing: -.035em; }
+    .bar { margin-top: 8px; width: 100%; height: 7px; overflow: hidden; border-radius: 999px; background: #e8efea; }
+    .bar > i { display: block; height: 100%; border-radius: inherit; background: var(--teal); transition: width .25s ease; }
+    .insight { background: #173c35; border-color: #173c35; color: #eff8f2; box-shadow: none; }
+    .insight .eyebrow { color: #9bd9c5; }
+    .insight h3 { margin: 0 0 9px; font-family: Georgia, "Times New Roman", serif; font-size: 1.45rem; font-weight: 500; }
+    .insight p { margin: 0; color: #c9dcd3; font-size: .9rem; line-height: 1.55; }
+    .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 18px; }
+    .compare > div { padding: 10px; border: 1px solid rgba(255,255,255,.16); border-radius: 10px; }
+    .compare span { display: block; color: #9bd9c5; font-size: .68rem; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; }
+    .compare strong { font-size: 1.05rem; }
+    footer { padding: 22px 2px 0; color: var(--muted); font-size: .78rem; }
+    .comparison-card { margin-top: 22px; display: grid; grid-template-columns: 220px minmax(0, 1fr); overflow: hidden; border: 1px solid var(--line); border-radius: 18px; background: var(--panel); box-shadow: var(--shadow); }
+    .comparison-nav { padding: 22px; background: #f7faf7; border-right: 1px solid var(--line); }
+    .comparison-nav h2 { margin: 0 0 8px; font-size: 1rem; }
+    .comparison-nav p { margin: 0 0 17px; color: var(--muted); font-size: .8rem; line-height: 1.45; }
+    .decision-button { display: block; width: 100%; margin: 7px 0; padding: 10px 11px; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: var(--muted); text-align: left; font-size: .82rem; font-weight: 750; }
+    .decision-button.active, .decision-button:hover { border-color: var(--teal); background: var(--teal); color: #fff; }
+    .comparison-main { padding: 22px; }
+    .comparison-main .eyebrow { margin-bottom: 6px; }
+    .comparison-main h3 { margin: 0; font-family: Georgia, "Times New Roman", serif; font-size: 1.55rem; font-weight: 500; letter-spacing: -.03em; }
+    .comparison-main > p { margin: 7px 0 19px; color: var(--muted); font-size: .88rem; line-height: 1.5; }
+    .versus { display: grid; grid-template-columns: 1fr 50px 1fr; align-items: stretch; gap: 12px; }
+    .candidate-card { padding: 16px; border: 1px solid var(--line); border-radius: 12px; }
+    .candidate-card.winner { border-color: #8ed4c8; background: #f3fcf9; }
+    .candidate-card .label { display: inline-block; margin-bottom: 8px; padding: 4px 7px; border-radius: 999px; background: #ecf2ee; color: var(--muted); font-size: .65rem; font-weight: 850; letter-spacing: .08em; text-transform: uppercase; }
+    .candidate-card.winner .label { background: var(--teal-soft); color: #086358; }
+    .candidate-card h4 { margin: 0 0 14px; font-size: 1rem; }
+    .candidate-card dl { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin: 0; font-size: .8rem; }
+    .candidate-card dt { color: var(--muted); }
+    .candidate-card dd { margin: 0; font-weight: 800; }
+    .vs { align-self: center; color: var(--muted); font-family: Georgia, "Times New Roman", serif; font-size: 1.1rem; font-style: italic; text-align: center; }
+    .reason { margin: 16px 0 0; padding: 13px 14px; border-left: 3px solid var(--orange); border-radius: 0 8px 8px 0; background: #fff7f0; color: #87431e; font-size: .85rem; line-height: 1.5; }
+    .interactive-stop { cursor: pointer; }
+    .interactive-stop .stop { transition: transform .18s ease, filter .18s ease; transform-box: fill-box; transform-origin: center; }
+    .interactive-stop:hover .stop, .interactive-stop:focus .stop { transform: scale(1.16); filter: drop-shadow(0 0 6px rgba(233,120,51,.45)); }
+    .interactive-stop:focus { outline: none; }
+    .alternatives { margin-top: 18px; padding-top: 17px; border-top: 1px solid var(--line); }
+    .alternatives h4 { margin: 0 0 10px; font-size: .83rem; }
+    .alternative-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 9px; }
+    .alternative { min-width: 0; padding: 11px; border: 1px solid var(--line); border-radius: 9px; background: #fafcfb; }
+    .alternative strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .8rem; }
+    .alternative span { display: block; margin-top: 5px; color: var(--muted); font-size: .72rem; line-height: 1.35; }
+    .real-run-note { margin: 16px 0 0; padding: 13px 14px; border-left: 3px solid var(--teal); border-radius: 0 8px 8px 0; background: #effaf7; color: #075f53; font-size: .85rem; line-height: 1.5; }
+    .route-stop-list { max-height: 335px; overflow-y: auto; }
+    .route-stop-button { display: block; width: 100%; margin: 7px 0; padding: 10px 11px; border: 1px solid var(--line); border-radius: 9px; background: #fff; color: var(--ink); text-align: left; font-size: .78rem; font-weight: 700; }
+    .route-stop-button.active, .route-stop-button:hover { border-color: var(--teal); background: #effaf7; color: #075f53; }
+
+    @media (max-width: 900px) {
+      .shell { padding: 18px; }
+      header { display: block; }
+      .status { margin-top: 18px; }
+      .controls, .dashboard { grid-template-columns: 1fr; }
+      .control { border-right: 0; border-bottom: 1px solid var(--line); }
+      .control:last-child { border-bottom: 0; }
+      .map-stage, svg { min-height: 430px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div>
+        <p class="eyebrow">CS201 · Draft visualisation</p>
+        <h1>Mobile clinic<br>routing lab.</h1>
+        <p class="subhead">Compare two ways to choose clinic stops: route-aware greedy selection versus coverage-first grid anchors. This draft uses illustrative locations and values.</p>
+      </div>
+      <div class="status"><span class="pulse"></span> draft scenario · Peninsular Malaysia</div>
+    </header>
+
+    <section class="controls" aria-label="Scenario controls">
+      <div class="control">
+        <span class="control-label">Selection strategy</span>
+        <div class="tabs" role="tablist" aria-label="Algorithm">
+          <button class="tab active" data-algorithm="a" role="tab" aria-selected="true">A · Route-aware</button>
+          <button class="tab" data-algorithm="b" role="tab" aria-selected="false">B · Grid anchors</button>
+        </div>
+      </div>
+      <label class="control">
+        <span class="control-label">Travel budget</span>
+        <div class="range-line"><input id="budget" type="range" min="80" max="280" value="180" step="10"><output id="budget-value">180 km</output></div>
+        <p class="hint">Closed depot-to-depot route</p>
+      </label>
+      <label class="control">
+        <span class="control-label">Service radius</span>
+        <div class="range-line"><input id="radius" type="range" min="2" max="25" value="10" step="1"><output id="radius-value">10 km</output></div>
+        <p class="hint">People count as served inside this radius</p>
+      </label>
+    </section>
+
+    <section class="dashboard">
+      <article class="map-card">
+        <div class="card-top">
+          <h2 class="card-title">Coverage and route</h2>
+          <div class="legend" aria-label="Map legend">
+            <span class="legend-item"><i class="legend-dot" style="background:#15251f"></i> Depot</span>
+            <span class="legend-item"><i class="legend-dot" style="background:#e97833"></i> Clinic stop</span>
+            <span class="legend-item"><i class="legend-dot" style="background:#0d8073"></i> Covered town</span>
+            <span class="legend-item"><i class="legend-line" style="background:#e97833"></i> Route</span>
+          </div>
+        </div>
+        <div class="map-stage">
+          <svg viewBox="0 0 840 530" role="img" aria-label="Illustrative route map with selected clinic stops and covered demand towns">
+            <path class="region" d="M154 52 C238 35 311 74 348 130 C397 203 406 278 483 323 C562 370 643 385 700 463 L646 485 C578 436 502 433 433 388 C354 336 322 274 291 218 C258 158 203 124 112 113 Z"/>
+            <path class="water-line" d="M89 174 C194 127 261 165 318 235 S470 372 716 395"/>
+            <path class="water-line" d="M136 294 C260 258 332 308 412 376 S560 460 694 449"/>
+            <text class="map-label" x="104" y="83">PENINSULAR MALAYSIA · ILLUSTRATIVE</text>
+            <text class="map-label" x="218" y="205">KLANG VALLEY</text>
+            <text class="map-label" x="514" y="405">EAST COAST</text>
+
+            <g id="service-rings">
+              <circle class="service-ring" cx="286" cy="252" r="47"/>
+              <circle class="service-ring" cx="413" cy="325" r="47"/>
+              <circle class="service-ring" cx="537" cy="397" r="47"/>
+            </g>
+            <g id="towns">
+              <circle class="demand covered" cx="231" cy="232" r="8"/><circle class="demand covered" cx="259" cy="285" r="5"/>
+              <circle class="demand covered" cx="312" cy="205" r="11"/><circle class="demand covered" cx="349" cy="258" r="6"/>
+              <circle class="demand covered" cx="390" cy="304" r="9"/><circle class="demand covered" cx="438" cy="352" r="6"/>
+              <circle class="demand covered" cx="492" cy="372" r="8"/><circle class="demand covered" cx="555" cy="421" r="7"/>
+              <circle class="demand" cx="456" cy="220" r="6"/><circle class="demand" cx="563" cy="298" r="10"/>
+              <circle class="demand" cx="627" cy="369" r="7"/><circle class="demand" cx="195" cy="151" r="5"/>
+              <circle class="demand" cx="322" cy="377" r="7"/><circle class="demand" cx="606" cy="454" r="5"/>
+            </g>
+            <polyline id="route-a" class="route" points="276,246 286,252 413,325 537,397 276,246"/>
+            <polyline id="route-b" class="route" points="276,246 286,252 413,325 276,246" style="display:none"/>
+            <g id="stops-a">
+              <circle class="depot" cx="276" cy="246" r="13"/><text class="depot-star" x="276" y="247">★</text>
+              <g class="interactive-stop" data-algorithm="a" data-comparison="0" role="button" tabindex="0" aria-label="Inspect why stop 1 was selected"><title>Stop 1: inspect alternatives</title><circle class="stop" cx="286" cy="252" r="13"/><text class="stop-number" x="286" y="252">1</text></g>
+              <g class="interactive-stop" data-algorithm="a" data-comparison="1" role="button" tabindex="0" aria-label="Inspect why stop 2 was selected"><title>Stop 2: inspect alternatives</title><circle class="stop" cx="413" cy="325" r="13"/><text class="stop-number" x="413" y="325">2</text></g>
+              <g class="interactive-stop" data-algorithm="a" data-comparison="2" role="button" tabindex="0" aria-label="Inspect why stop 3 was selected"><title>Stop 3: inspect alternatives</title><circle class="stop" cx="537" cy="397" r="13"/><text class="stop-number" x="537" y="397">3</text></g>
+            </g>
+            <g id="stops-b" style="display:none">
+              <circle class="depot" cx="276" cy="246" r="13"/><text class="depot-star" x="276" y="247">★</text>
+              <g class="interactive-stop" data-algorithm="b" data-comparison="0" role="button" tabindex="0" aria-label="Inspect why grid anchor 1 was selected"><title>Grid anchor 1: inspect alternatives</title><circle class="stop" cx="286" cy="252" r="13"/><text class="stop-number" x="286" y="252">1</text></g>
+              <g class="interactive-stop" data-algorithm="b" data-comparison="1" role="button" tabindex="0" aria-label="Inspect why grid anchor 2 was selected"><title>Grid anchor 2: inspect alternatives</title><circle class="stop" cx="413" cy="325" r="13"/><text class="stop-number" x="413" y="325">2</text></g>
+            </g>
+            <g transform="translate(571 52)">
+              <rect class="map-key" width="232" height="81" rx="10"/>
+              <text class="map-key-text" x="14" y="25">SERVICE RADIUS</text>
+              <text class="map-key-text" id="map-radius" x="14" y="48" style="font-size:19px;fill:#0d8073">10 km</text>
+              <text class="map-key-text" x="14" y="68" style="font-weight:400">Dashed rings show clinic reach</text>
+            </g>
+          </svg>
+        </div>
+      </article>
+
+      <aside class="side">
+        <article class="results-card">
+          <span class="algorithm-tag" id="algorithm-tag">Approach A</span>
+          <h2 id="algorithm-title">Route-aware greedy</h2>
+          <p id="algorithm-description">Ranks each stop by newly covered population divided by the cheapest extra route distance.</p>
+          <div class="metric-list">
+            <div class="metric"><span>Population covered</span><strong id="population">1.24M</strong></div>
+            <div class="bar"><i id="population-bar" style="width:76%"></i></div>
+            <div class="metric"><span>Demand towns served</span><strong id="towns-served">143 / 636</strong></div>
+            <div class="metric"><span>Route length</span><strong id="route-length">176 km</strong></div>
+            <div class="metric"><span>Selected stops</span><strong id="stops-count">3</strong></div>
+            <div class="metric"><span>Runtime</span><strong id="runtime">84 ms</strong></div>
+          </div>
+        </article>
+
+        <article class="insight">
+          <p class="eyebrow">What to compare</p>
+          <h3 id="insight-title">Every kilometre earns its place.</h3>
+          <p id="insight-text">Approach A can avoid attractive but expensive clusters because route cost is part of every selection score.</p>
+          <div class="compare">
+            <div><span>Budget used</span><strong id="budget-used">98%</strong></div>
+            <div><span>Radius</span><strong id="radius-summary">10 km</strong></div>
+          </div>
+        </article>
+      </aside>
+    </section>
+
+    <section class="comparison-card" aria-labelledby="comparison-title">
+      <nav class="comparison-nav" aria-label="Decision trace">
+        <h2 id="comparison-title">Why this stop?</h2>
+        <p>Inspect each choice against the strongest alternative available at that moment.</p>
+        <div id="comparison-buttons"></div>
+      </nav>
+      <article class="comparison-main">
+        <p class="eyebrow" id="comparison-step">Decision 1</p>
+        <h3 id="comparison-title-text">Kuala Selangor wins the first route slot.</h3>
+        <p id="comparison-context"></p>
+        <div class="versus">
+          <div class="candidate-card winner">
+            <span class="label">Chosen</span>
+            <h4 id="winner-name"></h4>
+            <dl id="winner-values"></dl>
+          </div>
+          <div class="vs">vs.</div>
+          <div class="candidate-card">
+            <span class="label">Closest alternative</span>
+            <h4 id="alternative-name"></h4>
+            <dl id="alternative-values"></dl>
+          </div>
+        </div>
+        <p class="reason" id="comparison-reason"></p>
+        <div class="alternatives">
+          <h4>Other candidates considered at this step</h4>
+          <div class="alternative-list" id="other-options"></div>
+        </div>
+      </article>
+    </section>
+    <footer>Draft UI only — replace the illustrative points and metrics with output from the Java experiment runner later.</footer>
+  </main>
+
+  <script>
+    const algorithms = {
+      a: {
+        tag: 'Approach A', title: 'Route-aware greedy', population: '1.24M', towns: '143 / 636',
+        distance: 176, stops: 3, runtime: '84 ms', bar: 76, budgetUsed: '98%',
+        description: 'Ranks each stop by newly covered population divided by the cheapest extra route distance.',
+        insightTitle: 'Every kilometre earns its place.',
+        insight: 'Approach A can avoid attractive but expensive clusters because route cost is part of every selection score.',
+        comparisons: [
+          {
+            label: 'Decision 1',
+            title: 'Kuala Selangor wins the first route slot.',
+            context: 'Both stops can serve dense towns around the Klang Valley. The route-aware score compares population gain with the cheapest insertion into the empty route.',
+            winner: ['Kuala Selangor', [['New population', '482,000'], ['Added route distance', '18.4 km'], ['Score', '26,196 people/km']]],
+            alternative: ['Klang north', [['New population', '391,000'], ['Added route distance', '22.7 km'], ['Score', '17,225 people/km']]],
+            reason: 'Chosen because it provides <strong>8,971 more people per added kilometre</strong> than the best alternative.',
+            others: [['Klang north', '17,225 people/km', 'More population, but a longer insertion.'], ['Seremban north', '12,916 people/km', 'Lower gain per kilometre.'], ['Melaka outskirts', '6,666 people/km', 'Too far from the initial route.']]
+          },
+          {
+            label: 'Decision 2',
+            title: 'Bentong beats a larger but costly cluster.',
+            context: 'After Kuala Selangor is accepted, previously served towns no longer contribute to a candidate’s gain. The route now has more than one possible insertion position.',
+            winner: ['Bentong', [['New population', '191,000'], ['Added route distance', '12.1 km'], ['Score', '15,785 people/km']]],
+            alternative: ['Kuantan fringe', [['New population', '308,000'], ['Added route distance', '41.8 km'], ['Score', '7,368 people/km']]],
+            reason: 'Kuantan covers more people, but Bentong delivers <strong>over twice the coverage per added kilometre</strong>.',
+            others: [['Kuantan fringe', '7,368 people/km', 'Large gain, expensive insertion.'], ['Seremban north', '4,247 people/km', 'Less new coverage than Bentong.'], ['Melaka outskirts', '3,881 people/km', 'Route detour is too large.']]
+          },
+          {
+            label: 'Decision 3',
+            title: 'Melaka outskirts fills the remaining budget.',
+            context: 'Two previous stops have already covered nearby demand towns. The last choice must add new coverage without making the closed route exceed its budget.',
+            winner: ['Melaka outskirts', [['New population', '160,000'], ['Added route distance', '15.2 km'], ['Score', '10,526 people/km']]],
+            alternative: ['Seremban north', [['New population', '62,000'], ['Added route distance', '14.6 km'], ['Score', '4,247 people/km']]],
+            reason: 'Chosen because it gains <strong>98,000 more newly covered people</strong> for a very similar route increase.',
+            others: [['Seremban north', '4,247 people/km', 'Overlaps heavily with existing coverage.'], ['Kuantan fringe', 'Deferred', 'Still does not fit the remaining budget.'], ['Klang north', '0 new people', 'Already served by earlier stops.']]
+          }
+        ]
+      },
+      b: {
+        tag: 'Approach B', title: 'Grid-cluster anchors', population: '1.16M', towns: '136 / 636',
+        distance: 162, stops: 2, runtime: '31 ms', bar: 71, budgetUsed: '90%',
+        description: 'Ranks high-coverage grid anchors first, then fits affordable anchors into the route.',
+        insightTitle: 'Coverage first, route second.',
+        insight: 'Approach B narrows the search through local grid updates, trading some route awareness for speed.',
+        comparisons: [
+          {
+            label: 'Anchor 1',
+            title: 'Kuala Selangor is the strongest grid anchor.',
+            context: 'Approach B keeps the best-coverage candidate in each grid cell. At selection time it ignores route cost and compares coverage only.',
+            winner: ['Kuala Selangor', [['New population', '482,000'], ['Grid cell', '7, 4'], ['Anchor value', '482,000']]],
+            alternative: ['Klang north', [['New population', '391,000'], ['Grid cell', '7, 5'], ['Anchor value', '391,000']]],
+            reason: 'Chosen because it covers <strong>91,000 more people</strong> than the strongest anchor in a competing cell.',
+            others: [['Klang north', '391,000 people', 'Best anchor in a nearby cell.'], ['Kuantan fringe', '308,000 people', 'Strong coverage, farther cell.'], ['Bentong', '191,000 people', 'Lower initial coverage.']]
+          },
+          {
+            label: 'Anchor 2',
+            title: 'Bentong becomes the strongest remaining anchor.',
+            context: 'After Kuala Selangor is selected, Approach B updates only the neighbouring cells. Towns already covered by the first anchor no longer count toward another cell’s value.',
+            winner: ['Bentong', [['New population', '191,000'], ['Grid cell', '8, 5'], ['Updated anchor value', '191,000']]],
+            alternative: ['Kuantan fringe', [['New population', '165,000'], ['Grid cell', '12, 8'], ['Updated anchor value', '165,000']]],
+            reason: 'Bentong is chosen because its <strong>updated marginal coverage is 26,000 people higher</strong> after the local overlap correction.',
+            others: [['Kuantan fringe', '165,000 people', 'Overlap reduces its value after anchor 1.'], ['Seremban north', '62,000 people', 'Lower remaining coverage.'], ['Melaka outskirts', '54,000 people', 'Lower remaining coverage.']]
+          }
+        ]
+      }
+    };
+
+    const budget = document.querySelector('#budget');
+    const radius = document.querySelector('#radius');
+    const setText = (selector, value) => document.querySelector(selector).textContent = value;
+
+    function updateControls() {
+      setText('#budget-value', `${budget.value} km`);
+      setText('#radius-value', `${radius.value} km`);
+      setText('#map-radius', `${radius.value} km`);
+      setText('#radius-summary', `${radius.value} km`);
+      const ringSize = 25 + Number(radius.value) * 2.2;
+      document.querySelectorAll('.service-ring').forEach(ring => ring.setAttribute('r', ringSize));
+    }
+
+    function renderComparison(data, index = 0) {
+      const comparison = data.comparisons[index];
+      document.querySelector('#comparison-buttons').innerHTML = data.comparisons.map((item, itemIndex) =>
+        `<button class="decision-button ${itemIndex === index ? 'active' : ''}" data-comparison="${itemIndex}">${item.label}</button>`
+      ).join('');
+      setText('#comparison-step', comparison.label);
+      setText('#comparison-title-text', comparison.title);
+      setText('#comparison-context', comparison.context);
+      setText('#winner-name', comparison.winner[0]);
+      setText('#alternative-name', comparison.alternative[0]);
+      document.querySelector('#winner-values').innerHTML = comparison.winner[1].map(([label, value]) => `<dt>${label}</dt><dd>${value}</dd>`).join('');
+      document.querySelector('#alternative-values').innerHTML = comparison.alternative[1].map(([label, value]) => `<dt>${label}</dt><dd>${value}</dd>`).join('');
+      document.querySelector('#comparison-reason').innerHTML = comparison.reason;
+      document.querySelector('#other-options').innerHTML = comparison.others.map(([name, value, reason]) =>
+        `<div class="alternative"><strong>${name}</strong><span><b>${value}</b><br>${reason}</span></div>`
+      ).join('');
+      document.querySelectorAll('.decision-button').forEach(button => button.addEventListener('click', () => renderComparison(data, Number(button.dataset.comparison))));
+    }
+
+    function selectAlgorithm(key) {
+      const data = algorithms[key];
+      document.querySelectorAll('.tab').forEach(tab => {
+        const active = tab.dataset.algorithm === key;
+        tab.classList.toggle('active', active);
+        tab.setAttribute('aria-selected', active);
+      });
+      document.querySelector('#route-a').style.display = key === 'a' ? '' : 'none';
+      document.querySelector('#route-b').style.display = key === 'b' ? '' : 'none';
+      document.querySelector('#stops-a').style.display = key === 'a' ? '' : 'none';
+      document.querySelector('#stops-b').style.display = key === 'b' ? '' : 'none';
+      setText('#algorithm-tag', data.tag);
+      setText('#algorithm-title', data.title);
+      setText('#algorithm-description', data.description);
+      setText('#population', data.population);
+      setText('#towns-served', data.towns);
+      setText('#route-length', `${data.distance} km`);
+      setText('#stops-count', data.stops);
+      setText('#runtime', data.runtime);
+      document.querySelector('#population-bar').style.width = `${data.bar}%`;
+      setText('#budget-used', data.budgetUsed);
+      setText('#insight-title', data.insightTitle);
+      setText('#insight-text', data.insight);
+      renderComparison(data);
+    }
+
+    document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', () => selectAlgorithm(tab.dataset.algorithm)));
+    document.querySelectorAll('.interactive-stop').forEach(stop => {
+      const inspectStop = () => {
+        const algorithmKey = stop.dataset.algorithm;
+        selectAlgorithm(algorithmKey);
+        renderComparison(algorithms[algorithmKey], Number(stop.dataset.comparison));
+        document.querySelector('.comparison-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      };
+      stop.addEventListener('click', inspectStop);
+      stop.addEventListener('keydown', event => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          inspectStop();
+        }
+      });
+    });
+    budget.addEventListener('input', updateControls);
+    radius.addEventListener('input', updateControls);
+    updateControls();
+    selectAlgorithm('a');
+  </script>
+  <script src="data/approach-a-lazy-r10-b180.js"></script>
+  <script>
+    (() => {
+      const run = window.APPROACH_A_REAL_RUN;
+      if (!run) return;
+      const setText = (selector, value) => document.querySelector(selector).textContent = value;
+      const formatPopulation = value => new Intl.NumberFormat('en-US').format(value);
+      const escapeHtml = value => String(value).replace(/[&<>'"]/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+      }[character]));
+
+      function showRouteStop(stop) {
+        const decision = run.decisions.find(item => item[1] === stop.id);
+        const [step, , populationGain, townGain, addedDistance, routeBefore, routeAfter, populationBefore, populationAfter] = decision;
+        const score = populationGain / addedDistance;
+        const card = document.querySelector('.comparison-card');
+        card.innerHTML = `<nav class="comparison-nav" aria-label="Selected route stops"><h2>Selection records</h2><p>Each item is ordered by when the solver chose the stop. The final route order can differ after route cleanup.</p><div class="route-stop-list">${run.decisions.map(item => { const selected = run.stops.find(candidate => candidate.id === item[1]); return `<button class="route-stop-button ${item[1] === stop.id ? 'active' : ''}" data-candidate-id="${item[1]}">${item[0]}. ${escapeHtml(selected.name)}</button>`; }).join('')}</div></nav><article class="comparison-main"><p class="eyebrow">Chosen-stop record · selection step ${step}</p><h3>${escapeHtml(stop.name)}</h3><p>The solver chose this stop at step ${step}; it appears as visit ${stop.order} in the final route after the later 2-opt cleanup.</p><div class="versus"><div class="candidate-card winner"><span class="label">Coverage gained</span><h4>${formatPopulation(populationGain)} people</h4><dl><dt>Newly served towns</dt><dd>${townGain}</dd><dt>Coverage before</dt><dd>${formatPopulation(populationBefore)}</dd><dt>Coverage after</dt><dd>${formatPopulation(populationAfter)}</dd></dl></div><div class="vs">+</div><div class="candidate-card"><span class="label">Route insertion</span><h4>${addedDistance.toFixed(2)} km added</h4><dl><dt>Route before</dt><dd>${routeBefore.toFixed(2)} km</dd><dt>Route after</dt><dd>${routeAfter.toFixed(2)} km</dd><dt>Gain per added km</dt><dd>${formatPopulation(Math.round(score))}</dd></dl></div></div><p class="real-run-note">This is the exact chosen-stop record exported by the solver. It intentionally does not compare unexported alternative candidates.</p></article>`;
+        document.querySelectorAll('.route-stop-button').forEach(button => button.addEventListener('click', () => showRouteStop(
+          run.stops.find(item => item.id === Number(button.dataset.candidateId))
+        )));
+      }
+
+      function drawRealRoute() {
+        const svg = document.querySelector('svg');
+        const points = [run.depot, ...run.stops];
+        const latitudes = points.map(point => point.latitude);
+        const longitudes = points.map(point => point.longitude);
+        const minLatitude = Math.min(...latitudes);
+        const maxLatitude = Math.max(...latitudes);
+        const minLongitude = Math.min(...longitudes);
+        const maxLongitude = Math.max(...longitudes);
+        const padding = 72;
+        const width = 840;
+        const height = 530;
+        const longitudeRange = Math.max(maxLongitude - minLongitude, 0.01);
+        const latitudeRange = Math.max(maxLatitude - minLatitude, 0.01);
+        const pointAt = point => ({
+          x: padding + (point.longitude - minLongitude) / longitudeRange * (width - padding * 2),
+          y: height - padding - (point.latitude - minLatitude) / latitudeRange * (height - padding * 2)
+        });
+        const routePoints = [run.depot, ...run.stops, run.depot].map(pointAt);
+        const kilometresPerPixel = Math.max(
+          longitudeRange * 111 * Math.cos((minLatitude + maxLatitude) / 2 * Math.PI / 180) / (width - padding * 2),
+          latitudeRange * 111 / (height - padding * 2)
+        );
+        const ringRadius = Math.max(8, run.serviceRadiusKm / kilometresPerPixel);
+        const depotPoint = pointAt(run.depot);
+        const routeText = routePoints.map(point => `${point.x.toFixed(1)},${point.y.toFixed(1)}`).join(' ');
+        const stops = run.stops.map(stop => {
+          const point = pointAt(stop);
+          return `<g class="interactive-stop real-map-stop" data-stop-order="${stop.order}" role="button" tabindex="0" aria-label="Show route stop ${stop.order}: ${escapeHtml(stop.name)}"><title>Stop ${stop.order}: ${escapeHtml(stop.name)}</title><circle class="service-ring" cx="${point.x}" cy="${point.y}" r="${ringRadius.toFixed(1)}"/><circle class="stop" cx="${point.x}" cy="${point.y}" r="10"/><text class="stop-number" x="${point.x}" y="${point.y}">${stop.order}</text></g>`;
+        }).join('');
+        svg.innerHTML = `<rect width="840" height="530" fill="#eaf3ec"/><path d="M0 420 C160 360 230 450 360 390 S610 280 840 350" class="water-line"/><path d="M0 168 C180 130 300 205 450 150 S650 135 840 90" class="water-line"/><text class="map-label" x="24" y="37">REAL APPROACH A ROUTE · KUALA LUMPUR REGION</text><text class="map-label" x="24" y="58">${run.stops.length} SELECTED STOPS · ${run.routeLengthKm.toFixed(2)} KM CLOSED ROUTE</text><polyline class="route" points="${routeText}"/><circle class="depot" cx="${depotPoint.x}" cy="${depotPoint.y}" r="14"/><text class="depot-star" x="${depotPoint.x}" y="${depotPoint.y + 1}">★</text>${stops}<g transform="translate(603 438)"><rect class="map-key" width="214" height="70" rx="10"/><text class="map-key-text" x="13" y="24">SERVICE RADIUS</text><text class="map-key-text" x="13" y="46" style="font-size:18px;fill:#0d8073">${run.serviceRadiusKm} km</text><text class="map-key-text" x="13" y="63" style="font-weight:400">Rings are geographic scale</text></g>`;
+        document.querySelectorAll('.real-map-stop').forEach(element => {
+          const show = () => showRouteStop(run.stops.find(stop => stop.order === Number(element.dataset.stopOrder)));
+          element.addEventListener('click', show);
+          element.addEventListener('keydown', event => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault();
+              show();
+            }
+          });
+        });
+      }
+
+      const bTab = document.querySelector('[data-algorithm="b"]');
+      bTab.disabled = true;
+      bTab.textContent = 'B · Not run';
+      document.querySelector('.status').innerHTML = '<span class="pulse"></span> real run · Approach A · Kuala Lumpur';
+      document.querySelector('.subhead').textContent = 'This view is backed by the exported Approach A experiment result. Route stops, metrics, radius, and budget come from the real 10 km / 180 km run.';
+      setText('#algorithm-tag', 'Real experiment output');
+      setText('#algorithm-title', 'Route-aware lazy greedy');
+      setText('#algorithm-description', `Run ${run.runName}: real route, coverage, and runtime exported by the Java experiment runner.`);
+      setText('#population', formatPopulation(run.populationCovered));
+      setText('#towns-served', `${run.townsCovered} / 636`);
+      setText('#route-length', `${run.routeLengthKm.toFixed(2)} km`);
+      setText('#stops-count', run.stops.length);
+      setText('#runtime', `${(run.runtimeMillis / 1000).toFixed(2)} s`);
+      document.querySelector('#population-bar').style.width = '78%';
+      setText('#budget-used', `${Math.round(run.routeLengthKm / run.travelBudgetKm * 100)}%`);
+      setText('#radius-summary', `${run.serviceRadiusKm} km`);
+      setText('#insight-title', 'A real result, not a simulation.');
+      setText('#insight-text', `${formatPopulation(run.populationCovered)} reported people were covered by ${run.stops.length} selected stops. ${run.deferredStops.toLocaleString()} candidates were deferred by the budget.`);
+      budget.value = run.travelBudgetKm;
+      radius.value = run.serviceRadiusKm;
+      budget.disabled = true;
+      radius.disabled = true;
+      updateControls();
+      document.querySelector('.legend').innerHTML = '<span class="legend-item"><i class="legend-dot" style="background:#15251f"></i> Depot</span><span class="legend-item"><i class="legend-dot" style="background:#e97833"></i> Selected route stop</span><span class="legend-item"><i class="legend-line" style="background:#e97833"></i> Closed route</span>';
+      document.querySelector('footer').textContent = 'Real traced Approach A output: 10 km service radius, 180 km budget. Each selected stop includes its exported coverage and route-insertion record.';
+      drawRealRoute();
+      showRouteStop(run.stops[0]);
+    })();
+  </script>
+</body>
+</html>

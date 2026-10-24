@@ -58,6 +58,11 @@ Build the project in this order. Finish and test each step before moving to the 
      sensitivity, depot/region checks, and synthetic scaling.
    - Save population covered, towns covered, route length, runtime, and
      relevant heap/grid statistics to CSV.
+   - Run one Approach A scenario from the project root:
+
+     ```bash
+     java -cp out Main data/processed results/approach-a-lazy-r10-b180 10 180 LAZY
+     ```
 
 10. **Prepare results and slides last**
     - Compare both approaches fairly by using the same coverage, insertion,
