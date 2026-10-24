@@ -49,9 +49,9 @@ These classes should not contain algorithm logic.
 
 ### `src/data/`
 
-Contains code that reads and prepares the dataset. `DataPreprocessor` currently
-creates the processed CSV files; `GeoNamesReader` and `InstanceLoader` will
-later read those files into the model classes.
+Contains code that reads and prepares the dataset. `DataPreprocessor` creates
+the processed CSV files; `ProcessedInstanceLoader` reads those files into a
+`ProblemInstance` for the solvers.
 
 ### `src/geometry/`
 
@@ -77,8 +77,9 @@ Both approaches must use this shared code for a fair comparison.
 
 Contains the solvers only. `RoutingSolver` is the common interface;
 `LazyGreedySolver` implements Approach A in lazy and full-recompute modes and
-returns `ApproachAResult` statistics for the comparison experiment. Approach B
-(`GridClusterSolver`) and the small-instance `HeldKarpSolver` baseline follow.
+returns `ApproachAResult` statistics for the comparison experiment.
+`HeldKarpSolver` is an exact baseline restricted to small, hand-checkable
+instances of at most 15 candidate stops.
 
 ### `src/experiments/`
 
