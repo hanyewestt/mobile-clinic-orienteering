@@ -1,3 +1,10 @@
+/*
+ * Compile from the project root:
+ * javac -d out $(find src test -name '*.java' -print)
+ *
+ * Run this test:
+ * java -cp out coverage.CoverageSmokeTest
+ */
 package coverage;
 
 import java.util.List;
