@@ -75,9 +75,10 @@ Both approaches must use this shared code for a fair comparison.
 
 ### `src/algorithms/`
 
-Contains the solvers only: the `RoutingSolver` interface, Approach A
-(`LazyGreedySolver`), Approach B (`GridClusterSolver`), and the small-instance
-`HeldKarpSolver` baseline.
+Contains the solvers only. `RoutingSolver` is the common interface;
+`LazyGreedySolver` implements Approach A in lazy and full-recompute modes and
+returns `ApproachAResult` statistics for the comparison experiment. Approach B
+(`GridClusterSolver`) and the small-instance `HeldKarpSolver` baseline follow.
 
 ### `src/experiments/`
 
