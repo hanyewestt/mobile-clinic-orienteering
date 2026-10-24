@@ -27,13 +27,25 @@ public final class LazyGreedySolver implements RoutingSolver {
 
     private final ScoreRefreshMode refreshMode;
     private final int maximumTwoOptPasses;
+    private final boolean recordDecisionTrace;
 
     public LazyGreedySolver(ScoreRefreshMode refreshMode, int maximumTwoOptPasses) {
+        this(refreshMode, maximumTwoOptPasses, false);
+    }
+
+    /**
+     * The optional trace audits decisions without contributing to their score or selection.
+     */
+    public LazyGreedySolver(
+            ScoreRefreshMode refreshMode,
+            int maximumTwoOptPasses,
+            boolean recordDecisionTrace) {
         this.refreshMode = Objects.requireNonNull(refreshMode, "refreshMode");
         if (maximumTwoOptPasses < 0) {
-            throw new IllegalArgumentException("Maximum 2-opt pass count must not be negative.");
+            throw new IllegalArgumentException("Solver limits must not be negative.");
         }
         this.maximumTwoOptPasses = maximumTwoOptPasses;
+        this.recordDecisionTrace = recordDecisionTrace;
     }
 
     @Override
@@ -52,12 +64,13 @@ public final class LazyGreedySolver implements RoutingSolver {
         List<Integer> routeStopIds = List.of();
         Route route = RouteCalculator.createRoute(routeStopIds, instance.depot(), instance.candidateStops());
         List<Integer> deferred = new ArrayList<>();
+        List<DecisionTrace> decisionTrace = new ArrayList<>();
         MutableStatistics statistics = new MutableStatistics();
 
         if (refreshMode == ScoreRefreshMode.LAZY) {
-            route = solveLazily(instance, coverageTracker, accepted, deferred, route, statistics);
+            route = solveLazily(instance, coverageIndex, coverageTracker, accepted, deferred, route, statistics, decisionTrace);
         } else {
-            route = solveFully(instance, coverageTracker, accepted, deferred, route, statistics);
+            route = solveFully(instance, coverageIndex, coverageTracker, accepted, deferred, route, statistics, decisionTrace);
         }
 
         TwoOptResult polished = TwoOptPolisher.polish(
@@ -65,7 +78,7 @@ public final class LazyGreedySolver implements RoutingSolver {
         route = polished.route();
 
         RefillOutcome refillOutcome = refillDeferred(
-                instance, coverageTracker, accepted, deferred, route, statistics);
+                instance, coverageIndex, coverageTracker, accepted, deferred, route, statistics, decisionTrace);
         route = refillOutcome.route();
 
         long runtimeMillis = (System.nanoTime() - startedAtNanos) / 1_000_000;
@@ -82,16 +95,19 @@ public final class LazyGreedySolver implements RoutingSolver {
                 countAccepted(accepted),
                 deferred.size(),
                 refillOutcome.refilledStops(),
-                polished.improvements());
+                polished.improvements(),
+                decisionTrace);
     }
 
     private Route solveLazily(
             ProblemInstance instance,
+            CoverageIndex coverageIndex,
             CoverageTracker coverageTracker,
             boolean[] accepted,
             List<Integer> deferred,
             Route route,
-            MutableStatistics statistics) {
+            MutableStatistics statistics,
+            List<DecisionTrace> decisionTrace) {
         PriorityQueue<CandidateScore> heap = new PriorityQueue<>(
                 Comparator.comparingDouble(CandidateScore::score).reversed());
 
@@ -128,7 +144,7 @@ public final class LazyGreedySolver implements RoutingSolver {
             double refreshedScore = score(gain, insertion.addedDistanceKm());
             if (heap.isEmpty() || refreshedScore >= heap.peek().score()) {
                 route = acceptStop(
-                        route, candidateStopId, insertion, instance, coverageTracker, accepted);
+                        route, candidateStopId, insertion, instance, coverageIndex, coverageTracker, accepted, decisionTrace);
             } else {
                 heap.add(new CandidateScore(candidateStopId, refreshedScore));
             }
@@ -139,11 +155,13 @@ public final class LazyGreedySolver implements RoutingSolver {
 
     private Route solveFully(
             ProblemInstance instance,
+            CoverageIndex coverageIndex,
             CoverageTracker coverageTracker,
             boolean[] accepted,
             List<Integer> deferred,
             Route route,
-            MutableStatistics statistics) {
+            MutableStatistics statistics,
+            List<DecisionTrace> decisionTrace) {
         while (true) {
             CandidateChoice bestChoice = null;
             for (CandidateStop candidateStop : instance.candidateStops()) {
@@ -182,8 +200,10 @@ public final class LazyGreedySolver implements RoutingSolver {
                     bestChoice.candidateStopId(),
                     bestChoice.insertion(),
                     instance,
+                    coverageIndex,
                     coverageTracker,
-                    accepted);
+                    accepted,
+                    decisionTrace);
         }
     }
 
@@ -211,11 +231,13 @@ public final class LazyGreedySolver implements RoutingSolver {
 
     private RefillOutcome refillDeferred(
             ProblemInstance instance,
+            CoverageIndex coverageIndex,
             CoverageTracker coverageTracker,
             boolean[] accepted,
             List<Integer> deferred,
             Route route,
-            MutableStatistics statistics) {
+            MutableStatistics statistics,
+            List<DecisionTrace> decisionTrace) {
         int refilledStops = 0;
         while (true) {
             CandidateChoice bestChoice = null;
@@ -251,24 +273,92 @@ public final class LazyGreedySolver implements RoutingSolver {
                     bestChoice.candidateStopId(),
                     bestChoice.insertion(),
                     instance,
+                    coverageIndex,
                     coverageTracker,
-                    accepted);
+                    accepted,
+                    decisionTrace);
             refilledStops++;
         }
     }
 
-    private static Route acceptStop(
+    private Route acceptStop(
             Route route,
             int candidateStopId,
             Insertion insertion,
             ProblemInstance instance,
+            CoverageIndex coverageIndex,
             CoverageTracker coverageTracker,
-            boolean[] accepted) {
+            boolean[] accepted,
+            List<DecisionTrace> decisionTrace) {
+        if (recordDecisionTrace) {
+            decisionTrace.add(captureTrace(
+                    decisionTrace.size() + 1,
+                    route,
+                    candidateStopId,
+                    insertion,
+                    instance,
+                    coverageIndex,
+                    coverageTracker,
+                    accepted));
+        }
         List<Integer> updatedStopIds = RouteCalculator.insertStop(
                 route.stopIds(), candidateStopId, insertion.position());
         coverageTracker.applyStop(candidateStopId);
         accepted[candidateStopId] = true;
         return RouteCalculator.createRoute(updatedStopIds, instance.depot(), instance.candidateStops());
+    }
+
+    private DecisionTrace captureTrace(
+            int selectionStep,
+            Route route,
+            int chosenCandidateStopId,
+            Insertion chosenInsertion,
+            ProblemInstance instance,
+            CoverageIndex coverageIndex,
+            CoverageTracker coverageTracker,
+            boolean[] accepted) {
+        long populationBefore = coverageTracker.coveredPopulation();
+        int townsBefore = coverageTracker.servedTownCount();
+        List<NewlyServedTown> newlyServedTowns = newlyServedTowns(
+                chosenCandidateStopId, instance, coverageIndex, coverageTracker);
+        long chosenGain = newlyServedTowns.stream().mapToLong(NewlyServedTown::population).sum();
+        double addedDistanceKm = chosenInsertion.addedDistanceKm();
+        return new DecisionTrace(
+                selectionStep,
+                chosenCandidateStopId,
+                chosenGain,
+                newlyServedTowns.size(),
+                chosenInsertion.position(),
+                addedDistanceKm,
+                score(chosenGain, addedDistanceKm),
+                route.totalDistanceKm(),
+                route.totalDistanceKm() + addedDistanceKm,
+                populationBefore,
+                populationBefore + chosenGain,
+                townsBefore,
+                townsBefore + newlyServedTowns.size(),
+                newlyServedTowns);
+    }
+
+    private static List<NewlyServedTown> newlyServedTowns(
+            int candidateStopId,
+            ProblemInstance instance,
+            CoverageIndex coverageIndex,
+            CoverageTracker coverageTracker) {
+        CandidateStop candidateStop = instance.candidateStops().get(candidateStopId);
+        List<NewlyServedTown> towns = new ArrayList<>();
+        int count = coverageIndex.coveredTownCount(candidateStopId);
+        for (int position = 0; position < count; position++) {
+            int townId = coverageIndex.coveredTownIdAt(candidateStopId, position);
+            if (!coverageTracker.isServed(townId)) {
+                var town = instance.demandTowns().get(townId);
+                towns.add(new NewlyServedTown(
+                        town.id(), town.geonameId(), town.name(), town.coordinate().latitude(),
+                        town.coordinate().longitude(), town.population(),
+                        Haversine.distanceKm(candidateStop.coordinate(), town.coordinate())));
+            }
+        }
+        return towns;
     }
 
     private static double score(long gain, double additionalDistanceKm) {

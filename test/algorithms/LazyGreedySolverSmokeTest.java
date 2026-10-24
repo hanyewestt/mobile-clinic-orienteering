@@ -49,6 +49,17 @@ public final class LazyGreedySolverSmokeTest {
         check(lazy.heapPops() > 0, "Lazy mode must use heap pops.");
         check(full.heapPops() == 0, "Full mode must not use a heap.");
 
+        ApproachAResult traced = new LazyGreedySolver(ScoreRefreshMode.LAZY, 3, true)
+                .solveDetailed(instance, coverageIndex);
+        check(traced.decisionTrace().size() == 2, "Trace mode must record each accepted stop.");
+        DecisionTrace firstDecision = traced.decisionTrace().get(0);
+        check(firstDecision.chosenCandidateStopId() == 0,
+                "The first trace should identify the depot stop as the winner.");
+        check(firstDecision.marginalPopulation() == 300,
+                "The first trace must preserve the chosen stop's marginal population.");
+        check(firstDecision.populationAfter() == 300,
+                "Trace coverage totals must reflect the accepted stop.");
+
         System.out.println("Approach A smoke test passed.");
     }
 

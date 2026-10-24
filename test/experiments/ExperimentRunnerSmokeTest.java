@@ -40,7 +40,7 @@ public final class ExperimentRunnerSmokeTest {
                 50.0);
         Path outputDirectory = Files.createTempDirectory("mobile-clinic-experiment-");
         ExperimentConfig config = new ExperimentConfig(
-                "smoke-run", 10.0, 50.0, ScoreRefreshMode.LAZY, 3, outputDirectory);
+                "smoke-run", 10.0, 50.0, ScoreRefreshMode.LAZY, 3, outputDirectory, true);
 
         ExperimentOutcome outcome = ExperimentRunner.runApproachA(instance, config);
 
@@ -51,6 +51,8 @@ public final class ExperimentRunnerSmokeTest {
         check(Files.isRegularFile(outputDirectory.resolve("result.json")), "result.json must be written.");
         check(Files.readString(outputDirectory.resolve("result.json")).contains("\"populationCovered\": 700"),
                 "The JSON result should contain the covered population.");
+        check(Files.readString(outputDirectory.resolve("result.json")).contains("\"decisionTrace\":"),
+                "A traced experiment must export its decision trace.");
 
         System.out.println("Experiment runner smoke test passed.");
     }

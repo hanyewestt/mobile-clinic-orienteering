@@ -24,7 +24,10 @@ public final class ExperimentRunner {
         }
         CoverageIndex coverageIndex = CoverageBuilder.build(
                 instance.candidateStops(), instance.demandTowns(), instance.serviceRadiusKm());
-        LazyGreedySolver solver = new LazyGreedySolver(config.refreshMode(), config.maximumTwoOptPasses());
+        LazyGreedySolver solver = new LazyGreedySolver(
+                config.refreshMode(),
+                config.maximumTwoOptPasses(),
+                config.recordDecisionTrace());
         ExperimentOutcome outcome = new ExperimentOutcome(config, instance, solver.solveDetailed(instance, coverageIndex));
         ResultsWriter.writeApproachA(outcome);
         return outcome;
@@ -43,26 +46,31 @@ public final class ExperimentRunner {
 
     /**
      * Usage: ExperimentRunner <processed-data-dir> <output-dir> <radius-km>
-     * <budget-km> <LAZY|FULL> [run-name]
+     * <budget-km> <LAZY|FULL> [run-name] [--trace]
      */
     public static void main(String[] args) throws IOException {
-        if (args.length < 5 || args.length > 6) {
+        if (args.length < 5 || args.length > 7) {
             throw new IllegalArgumentException(
                     "Usage: ExperimentRunner <processed-data-dir> <output-dir> <radius-km> "
-                            + "<budget-km> <LAZY|FULL> [run-name]");
+                            + "<budget-km> <LAZY|FULL> [run-name] [--trace]");
         }
 
         double radiusKm = Double.parseDouble(args[2]);
         double budgetKm = Double.parseDouble(args[3]);
         ScoreRefreshMode mode = ScoreRefreshMode.valueOf(args[4].toUpperCase());
-        String runName = args.length == 6 ? args[5] : defaultRunName(radiusKm, budgetKm, mode);
+        boolean trace = args.length == 7 && "--trace".equals(args[6]);
+        if (args.length == 7 && !trace) {
+            throw new IllegalArgumentException("The optional final argument must be --trace.");
+        }
+        String runName = args.length >= 6 ? args[5] : defaultRunName(radiusKm, budgetKm, mode);
         ExperimentConfig config = new ExperimentConfig(
                 runName,
                 radiusKm,
                 budgetKm,
                 mode,
                 3,
-                Path.of(args[1]));
+                Path.of(args[1]),
+                trace);
         ExperimentOutcome outcome = runApproachAFromProcessedData(Path.of(args[0]), config);
         System.out.println("Experiment complete: " + outcome.config().outputDirectory());
         System.out.println("Population covered: " + outcome.approachAResult().runResult().populationCovered());

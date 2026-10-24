@@ -11,7 +11,19 @@ public record ExperimentConfig(
         double travelBudgetKm,
         ScoreRefreshMode refreshMode,
         int maximumTwoOptPasses,
-        Path outputDirectory) {
+        Path outputDirectory,
+        boolean recordDecisionTrace) {
+
+    public ExperimentConfig(
+            String runName,
+            double serviceRadiusKm,
+            double travelBudgetKm,
+            ScoreRefreshMode refreshMode,
+            int maximumTwoOptPasses,
+            Path outputDirectory) {
+        this(runName, serviceRadiusKm, travelBudgetKm, refreshMode, maximumTwoOptPasses,
+                outputDirectory, false);
+    }
 
     public ExperimentConfig {
         runName = Objects.requireNonNull(runName, "runName");
