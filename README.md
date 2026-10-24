@@ -61,9 +61,10 @@ kilometres for Approach B's grid cells.
 
 ### `src/coverage/`
 
-Contains coverage logic. `CoverageBuilder` precomputes the demand towns within
-each candidate site's service radius; `CoverageTracker` records towns already
-served so their population is not counted twice.
+Contains coverage logic. `CoverageBuilder` precomputes a `CoverageIndex` of
+demand towns within each candidate site's service radius. `CoverageTracker`
+records towns already served so their population is not counted twice, and
+returns a `CoverageChange` whenever a stop is accepted.
 
 ### `src/routing/`
 
