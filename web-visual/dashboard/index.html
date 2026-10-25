@@ -1,0 +1,487 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Approach Comparison Dashboard</title>
+<style>
+  :root {
+    --page: #f9f9f7;
+    --surface: #fcfcfb;
+    --card: #ffffff;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #898781;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --chip: #f0efec;
+    --up: #006300;
+    --down: #b42323;
+    --a-lazy: #eb6834;
+    --b-grid: #2a78d6;
+    --a-full: #1baf7a;
+    --site: #d6d4cc;
+    --town: #a9a69c;
+    --shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 18px rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page: #0d0d0d; --surface: #1a1a19; --card: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+      --grid: #2c2c2a; --axis: #383835; --chip: #262624; --up: #0ca30c; --down: #e66767;
+      --a-lazy: #d95926; --b-grid: #3987e5; --a-full: #199e70; --site: #333331; --town: #6c6a64;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 18px rgba(0,0,0,.3);
+    }
+  }
+  :root[data-theme="dark"] {
+    --page: #0d0d0d; --surface: #1a1a19; --card: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+    --grid: #2c2c2a; --axis: #383835; --chip: #262624; --up: #0ca30c; --down: #e66767;
+    --a-lazy: #d95926; --b-grid: #3987e5; --a-full: #199e70; --site: #333331; --town: #6c6a64;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 18px rgba(0,0,0,.3);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding: 20px 16px 48px; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 16px; margin-bottom: 14px; }
+  h1 { font-size: 22px; margin: 0; letter-spacing: -.01em; }
+  .sub { color: var(--ink-2); margin: 0; flex-basis: 100%; }
+  a { color: inherit; }
+  .link { color: var(--ink-2); font-size: 13px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); margin: 28px 0 10px; font-weight: 650; }
+  .tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tab { border: 1px solid var(--grid); background: var(--card); border-radius: 999px; padding: 6px 14px; cursor: pointer; font: inherit; color: var(--ink-2); }
+  .tab[aria-selected="true"] { background: var(--ink); color: var(--page); border-color: var(--ink); }
+  .card { background: var(--card); border: 1px solid var(--grid); border-radius: 12px; box-shadow: var(--shadow); }
+  .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+  .kpi { padding: 14px 16px; }
+  .kpi .name { display: flex; align-items: center; gap: 8px; font-weight: 650; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; display: inline-block; }
+  .kpi .hero { font-size: 30px; font-weight: 700; letter-spacing: -.02em; font-variant-numeric: tabular-nums; margin-top: 6px; }
+  .kpi .hero small { font-size: 13px; color: var(--ink-2); font-weight: 500; letter-spacing: 0; }
+  .delta { font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .delta.up { color: var(--up); } .delta.down { color: var(--down); } .delta.same { color: var(--muted); }
+  .kv { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; margin-top: 10px; font-size: 13px; }
+  .kv dt { color: var(--ink-2); } .kv dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; }
+  .meter { height: 6px; background: var(--chip); border-radius: 3px; margin-top: 4px; overflow: hidden; grid-column: span 2; }
+  .meter i { display: block; height: 100%; border-radius: 3px; }
+  .bars { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; }
+  .barCard { padding: 14px 16px; }
+  .barCard h3 { margin: 0 0 10px; font-size: 14px; font-weight: 650; }
+  .barCard h3 span { color: var(--muted); font-weight: 500; }
+  .barRow { display: grid; grid-template-columns: 84px 1fr; align-items: center; gap: 10px; margin: 6px 0; font-size: 13px; }
+  .barRow .lbl { color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .track { position: relative; height: 22px; border-left: 1px solid var(--axis); }
+  .fill { position: absolute; left: 0; top: 3px; bottom: 3px; border-radius: 0 4px 4px 0; transition: width .35s ease; }
+  .val { position: absolute; top: 50%; transform: translateY(-50%); font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; padding-left: 6px; }
+  .barRow:hover .fill { filter: brightness(1.08); }
+  .anim { padding: 12px; }
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-bottom: 10px; }
+  .btn { border: 1px solid var(--grid); background: var(--chip); color: var(--ink); border-radius: 8px; padding: 6px 12px; cursor: pointer; font: inherit; }
+  .btn.primary { background: var(--ink); color: var(--page); border-color: var(--ink); min-width: 84px; }
+  .controls label { color: var(--ink-2); font-size: 13px; display: flex; align-items: center; gap: 6px; }
+  #progress { flex: 1 1 220px; accent-color: var(--ink-2); }
+  .maps { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+  .map { border: 1px solid var(--grid); border-radius: 10px; overflow: hidden; background: var(--surface); }
+  .map canvas { width: 100%; aspect-ratio: 4 / 3; display: block; }
+  .mapHead { display: flex; justify-content: space-between; gap: 8px; padding: 8px 10px; border-bottom: 1px solid var(--grid); font-size: 13px; }
+  .mapHead b { display: flex; align-items: center; gap: 6px; }
+  .mapFoot { padding: 6px 10px 9px; font-size: 12.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; min-height: 44px; }
+  .mapFoot .phase { color: var(--ink); font-weight: 600; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 16px; color: var(--ink-2); font-size: 12.5px; margin-top: 10px; }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; font-variant-numeric: tabular-nums; }
+  th, td { padding: 8px 10px; text-align: right; border-bottom: 1px solid var(--grid); }
+  th:first-child, td:first-child { text-align: left; }
+  th { color: var(--ink-2); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .04em; }
+  tr.sel td { background: var(--chip); }
+  tbody tr { cursor: pointer; }
+  .best { font-weight: 700; }
+  .best::after { content: " ★"; color: var(--muted); font-weight: 400; }
+  .tableCard { overflow-x: auto; }
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+  .stats .card { padding: 12px 16px; }
+  .stats h3 { margin: 0 0 6px; font-size: 14px; display: flex; align-items: center; gap: 8px; }
+  .insights { padding: 14px 18px; }
+  .insights ul { margin: 0; padding-left: 18px; }
+  .insights li { margin: 4px 0; }
+  .note { color: var(--muted); font-size: 12.5px; margin-top: 8px; }
+  #tip { position: fixed; pointer-events: none; background: var(--card); border: 1px solid var(--grid); border-radius: 8px; padding: 6px 9px; font-size: 12.5px; box-shadow: var(--shadow); display: none; z-index: 5; }
+  #loading { padding: 40px; text-align: center; color: var(--ink-2); }
+  @media (max-width: 600px) { .kpi .hero { font-size: 26px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Approach A vs Approach B</h1>
+    <a class="link" href="../step-player/index.html">Open the step player →</a>
+    <p class="sub">Mobile clinic routing on Peninsular Malaysia from Kuala Lumpur. Each scenario fixes the service radius r and the travel budget B; every number below comes from the solver's own trace.</p>
+  </header>
+
+  <div class="tabs" id="tabs" role="tablist"></div>
+  <div id="loading">Loading traces…</div>
+
+  <div id="content" hidden>
+    <h2>Headline</h2>
+    <div class="kpis" id="kpis"></div>
+
+    <h2>Side by side</h2>
+    <div class="bars" id="bars"></div>
+
+    <h2>How each route was built</h2>
+    <div class="card anim">
+      <div class="controls">
+        <button class="btn primary" id="play">▶ Play</button>
+        <button class="btn" id="restart">↺ Restart</button>
+        <label>Speed <input type="range" id="speed" min="-2" max="2" step="0.25" value="0"> <span id="speedLbl">1×</span></label>
+        <input type="range" id="progress" min="0" max="1000" value="0" aria-label="Animation progress">
+      </div>
+      <div class="maps" id="maps"></div>
+      <div class="legend">
+        <span><i class="dot" style="background:var(--ink-2)"></i>Depot (square)</span>
+        <span><i class="dot" style="border:1.5px solid var(--town)"></i>Town, area ∝ population</span>
+        <span>Filled town = served by the route</span>
+        <span>Hollow ring = anchor picked by B, not (yet) on the route</span>
+        <span>Faint circle = service radius r around each stop</span>
+      </div>
+      <p class="note">A rough replay: every route change and every B anchor pick is one frame, and all maps finish together. For step-level detail use the step player.</p>
+    </div>
+
+    <h2>Insights</h2>
+    <div class="card insights" id="insights"></div>
+
+    <h2>Run counters</h2>
+    <div class="stats" id="stats"></div>
+
+    <h2>All scenarios</h2>
+    <div class="card tableCard"><table id="allTable"></table></div>
+    <p class="note">★ = most population served in that scenario. Click a row to open it.</p>
+  </div>
+</div>
+<div id="tip"></div>
+
+<script src="../step-player/traces/manifest.js" onerror="window.STEP_TRACE_MANIFEST = []"></script>
+<script>
+'use strict';
+const fmtInt = new Intl.NumberFormat('en-US');
+const fmt1 = new Intl.NumberFormat('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const ALGS = {
+  'a-lazy': { label: 'A · lazy greedy', short: 'A lazy', color: '--a-lazy', order: 0 },
+  'b':      { label: 'B · grid, then route', short: 'B grid', color: '--b-grid', order: 1 },
+  'a-full': { label: 'A · full greedy', short: 'A full', color: '--a-full', order: 2 },
+};
+const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+
+/* ---------- Load every trace in the manifest ---------- */
+function loadScript(name) {
+  return new Promise((resolve, reject) => {
+    window.STEP_TRACE = undefined;
+    const s = document.createElement('script');
+    s.src = '../step-player/traces/' + encodeURIComponent(name) + '.js';
+    s.onload = () => { const t = window.STEP_TRACE; s.remove(); window.STEP_TRACE = undefined; t ? resolve(t) : reject(new Error('empty ' + name)); };
+    s.onerror = () => { s.remove(); reject(new Error('missing ' + name)); };
+    document.body.appendChild(s);
+  });
+}
+
+let SITES = null, TOWNS = null, DEPOT = null;
+const runs = [];                // one per trace
+const scenarios = new Map();    // key -> { key, r, B, runs: {alg: run} }
+
+async function loadAll() {
+  const names = window.STEP_TRACE_MANIFEST || [];
+  const loading = document.getElementById('loading');
+  for (let i = 0; i < names.length; i++) {
+    const name = names[i];
+    const m = name.match(/^(a-lazy|a-full|b)-r([\d_]+)-b([\d_]+)$/);
+    if (!m) continue;
+    loading.textContent = `Loading traces… ${i + 1} / ${names.length}`;
+    let t;
+    try { t = await loadScript(name); } catch (e) { console.warn(e); continue; }
+    if (!SITES) { SITES = t.sites; TOWNS = t.towns; DEPOT = t.depot; }
+    const result = t.events[t.events.length - 1];
+    // Only route changes, phases and anchor picks matter here; defers are kept only to mark skipped anchors.
+    const hasAnchors = t.events.some(ev => ev.kind === 'select');
+    const frames = t.events.filter(ev => ev.kind === 'phase' || ev.kind === 'insert' || ev.kind === 'route'
+      || ev.kind === 'select' || (hasAnchors && ev.kind === 'consider' && ev.outcome === 'defer'));
+    const run = { name, alg: m[1], r: t.radiusKm, B: t.budgetKm, algorithm: t.algorithm, result, frames,
+                  frameCount: frames.filter(e => e.kind !== 'phase' && e.kind !== 'consider').length };
+    runs.push(run);
+    const key = `r${m[2]}-b${m[3]}`;
+    if (!scenarios.has(key)) scenarios.set(key, { key, r: t.radiusKm, B: t.budgetKm, runs: {} });
+    scenarios.get(key).runs[m[1]] = run;
+  }
+}
+
+/* ---------- Scenario tabs and selection ---------- */
+let current = null;
+const tabsEl = document.getElementById('tabs');
+function sortedScenarios() { return [...scenarios.values()].sort((a, b) => a.r - b.r || a.B - b.B); }
+function renderTabs() {
+  tabsEl.innerHTML = sortedScenarios().map(s =>
+    `<button class="tab" role="tab" data-key="${s.key}" aria-selected="${current && current.key === s.key}">r ${s.r} km · B ${s.B} km</button>`).join('');
+}
+tabsEl.addEventListener('click', e => { const b = e.target.closest('[data-key]'); if (b) select(b.dataset.key); });
+
+function algsOf(s) { return Object.keys(s.runs).sort((a, b) => ALGS[a].order - ALGS[b].order); }
+
+function select(key) {
+  current = scenarios.get(key);
+  const url = new URL(location.href); url.searchParams.set('scenario', key); history.replaceState(null, '', url);
+  renderTabs(); renderKpis(); renderBars(); renderInsights(); renderStats(); renderTable(); setupMaps();
+}
+
+/* ---------- Headline cards ---------- */
+function deltaHtml(value, base, unit = '') {
+  if (base == null || value === base) return `<span class="delta same">same as A lazy</span>`;
+  const d = value - base, pct = base ? d / base * 100 : 0;
+  const cls = d > 0 ? 'up' : 'down';
+  return `<span class="delta ${cls}">${d > 0 ? '▲ +' : '▼ '}${fmtInt.format(d)}${unit} (${d > 0 ? '+' : ''}${pct.toFixed(1)}%) vs A lazy</span>`;
+}
+function renderKpis() {
+  const base = current.runs['a-lazy'] ? current.runs['a-lazy'].result.populationCovered : null;
+  document.getElementById('kpis').innerHTML = algsOf(current).map(alg => {
+    const run = current.runs[alg], r = run.result, a = ALGS[alg];
+    const used = r.routeKm / current.B * 100;
+    return `<div class="card kpi">
+      <div class="name"><i class="dot" style="background:var(${a.color})"></i>${a.label}</div>
+      <div class="hero">${fmtInt.format(r.populationCovered)} <small>people served</small></div>
+      ${alg === 'a-lazy' ? '<span class="delta same">baseline</span>' : deltaHtml(r.populationCovered, base)}
+      <dl class="kv">
+        <dt>Towns served</dt><dd>${r.townsCovered} / ${TOWNS.length}</dd>
+        <dt>Stops on route</dt><dd>${r.stops}</dd>
+        <dt>Route length</dt><dd>${fmt1.format(r.routeKm)} / ${current.B} km</dd>
+        <div class="meter"><i style="width:${Math.min(100, used)}%;background:var(${a.color})"></i></div>
+        <dt>Solver runtime</dt><dd>${fmtInt.format(r.runtimeMs)} ms</dd>
+      </dl></div>`;
+  }).join('');
+}
+
+/* ---------- Small multiples: one measure per chart, one axis each ---------- */
+const tip = document.getElementById('tip');
+function renderBars() {
+  const algs = algsOf(current);
+  const measures = [
+    { title: 'Population served', unit: 'people', get: r => r.populationCovered, fmt: v => fmtInt.format(v) },
+    { title: 'Towns served', unit: `of ${TOWNS.length}`, get: r => r.townsCovered, fmt: v => fmtInt.format(v) },
+    { title: 'Stops on route', unit: 'stops', get: r => r.stops, fmt: v => fmtInt.format(v) },
+    { title: 'Solver runtime', unit: 'ms, with step recording', get: r => r.runtimeMs, fmt: v => fmtInt.format(v) + ' ms' },
+  ];
+  document.getElementById('bars').innerHTML = measures.map(m => {
+    const max = Math.max(...algs.map(a => m.get(current.runs[a].result)), 1);
+    return `<div class="card barCard"><h3>${m.title} <span>· ${m.unit}</span></h3>${algs.map(alg => {
+      const v = m.get(current.runs[alg].result), w = v / max * 78;
+      return `<div class="barRow" data-tip="${esc(ALGS[alg].label)}: ${esc(m.fmt(v))}">
+        <span class="lbl">${ALGS[alg].short}</span>
+        <div class="track"><div class="fill" style="width:${w}%;background:var(${ALGS[alg].color})"></div><span class="val" style="left:${w}%">${m.fmt(v)}</span></div>
+      </div>`;
+    }).join('')}</div>`;
+  }).join('');
+}
+document.addEventListener('mousemove', e => {
+  const row = e.target.closest && e.target.closest('[data-tip]');
+  if (!row) { tip.style.display = 'none'; return; }
+  tip.textContent = row.dataset.tip; tip.style.display = 'block';
+  tip.style.left = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8) + 'px';
+  tip.style.top = (e.clientY + 14) + 'px';
+});
+
+/* ---------- Insights, written from the numbers ---------- */
+function renderInsights() {
+  const A = current.runs['a-lazy'], B = current.runs['b'], F = current.runs['a-full'];
+  const items = [];
+  if (A && B) {
+    const a = A.result, b = B.result, d = b.populationCovered - a.populationCovered;
+    const winner = d > 0 ? 'Approach B' : d < 0 ? 'Approach A' : 'Neither';
+    items.push(`<b>${winner}</b> serves more people here: ${fmtInt.format(Math.abs(d))} (${(Math.abs(d) / a.populationCovered * 100).toFixed(1)}%) ${d >= 0 ? 'more for B' : 'more for A'}, with ${b.stops} stops for B against ${a.stops} for A.`);
+    const bs = b.stats || {};
+    if (bs['Anchors selected'] != null) {
+      items.push(`B picked <b>${bs['Anchors selected']}</b> anchors by coverage alone; <b>${bs['Anchors skipped']}</b> of them did not fit the ${current.B} km budget when routed, and ${bs['Refilled stops'] || 0} came back in the refill.`);
+      items.push(`B's heap needed ${fmtInt.format(bs['Heap pops'])} pops (${fmtInt.format(bs['Stale pops'])} stale) and ${fmtInt.format(bs['Site evaluations'])} site evaluations, against ${fmtInt.format((a.stats || {})['Heap pops'] || 0)} pops and ${fmtInt.format((a.stats || {})['Candidate evaluations'] || 0)} evaluations for A. Pruning removed ${fmtInt.format(bs['Unreachable sites pruned'])} sites whose solo round trip exceeds B.`);
+    }
+    const perStopA = a.populationCovered / Math.max(a.stops, 1), perStopB = b.populationCovered / Math.max(b.stops, 1);
+    items.push(`Population per stop: A ${fmtInt.format(Math.round(perStopA))}, B ${fmtInt.format(Math.round(perStopB))}. ${perStopB > perStopA ? 'B spends its budget on fewer, larger anchors; A adds many cheap nearby stops.' : 'A gets more out of each stop here.'}`);
+  }
+  if (A && F) {
+    const d = F.result.populationCovered - A.result.populationCovered;
+    items.push(`Full re-scoring (A full) ${d >= 0 ? 'gains' : 'loses'} ${fmtInt.format(Math.abs(d))} people against lazy A. ${d < 0 ? 'Greedy is not monotone in effort: recomputing every score changed early picks and left a worse route.' : ''}`);
+  }
+  items.push(`Both approaches share coverage lists, cheapest insertion, 2-opt and refill, so the difference comes from the selection rule. These are heuristics on one instance; differences of a few percent can flip with r and B.`);
+  document.getElementById('insights').innerHTML = `<ul>${items.map(i => `<li>${i}</li>`).join('')}</ul>`;
+}
+
+/* ---------- Counters ---------- */
+function renderStats() {
+  document.getElementById('stats').innerHTML = algsOf(current).map(alg => {
+    const r = current.runs[alg].result, a = ALGS[alg];
+    const rows = Object.entries(r.stats || {}).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${Number.isInteger(v) ? fmtInt.format(v) : fmt1.format(v)}</dd>`).join('');
+    return `<div class="card"><h3><i class="dot" style="background:var(${a.color})"></i>${a.label}</h3>
+      <dl class="kv">${rows || '<dt>No counters in this trace</dt><dd></dd>'}</dl>
+      <p class="note"><a href="../step-player/index.html?trace=${current.runs[alg].name}">Step through this run →</a></p></div>`;
+  }).join('');
+}
+
+/* ---------- All-scenarios table ---------- */
+function renderTable() {
+  const algs = ['a-lazy', 'b', 'a-full'].filter(a => runs.some(r => r.alg === a));
+  let h = `<thead><tr><th>Scenario</th>${algs.map(a => `<th>${ALGS[a].short} · people</th><th>${ALGS[a].short} · stops</th>`).join('')}</tr></thead><tbody>`;
+  for (const s of sortedScenarios()) {
+    const best = Math.max(...algs.filter(a => s.runs[a]).map(a => s.runs[a].result.populationCovered));
+    h += `<tr data-key="${s.key}" class="${current === s ? 'sel' : ''}"><td>r ${s.r} km · B ${s.B} km</td>${algs.map(a => {
+      const run = s.runs[a];
+      if (!run) return '<td>–</td><td>–</td>';
+      const p = run.result.populationCovered;
+      return `<td class="${p === best ? 'best' : ''}">${fmtInt.format(p)}</td><td>${run.result.stops}</td>`;
+    }).join('')}</tr>`;
+  }
+  document.getElementById('allTable').innerHTML = h + '</tbody>';
+}
+document.getElementById('allTable').addEventListener('click', e => { const tr = e.target.closest('tr[data-key]'); if (tr) select(tr.dataset.key); });
+
+/* ---------- Route-building animation ---------- */
+let maps = [], progress = 0, playing = false, last = 0;
+const PLAY_SECONDS = 12;
+let proj = null;
+
+function makeProjection() {
+  const lat0 = DEPOT[0], lon0 = DEPOT[1];
+  const kx = 111.32 * Math.cos(lat0 * Math.PI / 180), ky = 110.574;
+  return (lat, lon) => [(lon - lon0) * kx, (lat - lat0) * ky];
+}
+
+function setupMaps() {
+  proj = proj || makeProjection();
+  const algs = algsOf(current);
+  // Shared view: every stop and anchor any approach ever places, plus the depot, padded by r.
+  let x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+  for (const alg of algs) for (const ev of current.runs[alg].frames) {
+    if (ev.site == null || (ev.kind !== 'insert' && ev.kind !== 'select')) continue;
+    const [x, y] = proj(SITES[ev.site][0], SITES[ev.site][1]);
+    x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+  }
+  const pad = current.r + 4;
+  const view = { x0: x0 - pad, x1: x1 + pad, y0: y0 - pad, y1: y1 + pad };
+
+  const host = document.getElementById('maps');
+  host.innerHTML = algs.map(alg => `<div class="map"><div class="mapHead"><b><i class="dot" style="background:var(${ALGS[alg].color})"></i>${ALGS[alg].label}</b><span id="f-${alg}"></span></div>
+    <canvas id="c-${alg}"></canvas><div class="mapFoot" id="s-${alg}"></div></div>`).join('');
+  maps = algs.map(alg => ({ alg, run: current.runs[alg], canvas: document.getElementById('c-' + alg), view }));
+  progress = 0; setPlaying(false); drawMaps();
+}
+
+function stateAt(run, frame) {
+  const s = { route: [], served: new Set(), planned: new Set(), anchors: new Map(), skipped: new Set(), phase: '', km: 0, pop: 0 };
+  let n = 0;
+  for (const ev of run.frames) {
+    const counts = ev.kind === 'insert' || ev.kind === 'route' || ev.kind === 'select';
+    if (counts && n >= frame) break;
+    if (ev.kind === 'phase') s.phase = ev.name;
+    else if (ev.kind === 'insert') {
+      s.route.splice(ev.position, 0, ev.site); s.km = ev.routeKm; s.skipped.delete(ev.site);
+      for (const t of ev.towns) if (!s.served.has(t)) { s.served.add(t); s.pop += TOWNS[t][2]; }
+    } else if (ev.kind === 'route') { s.route = ev.stops.slice(); s.km = ev.routeKm; }
+    else if (ev.kind === 'select') { s.anchors.set(ev.site, s.anchors.size + 1); for (const t of ev.towns) s.planned.add(t); }
+    else if (ev.kind === 'consider' && s.anchors.has(ev.site)) s.skipped.add(ev.site);
+    if (counts) n++;
+  }
+  return s;
+}
+
+function drawMaps() {
+  const colors = { ink: css('--ink'), ink2: css('--ink-2'), surface: css('--surface'), site: css('--site'), town: css('--town') };
+  for (const m of maps) {
+    const c = m.canvas, rect = c.getBoundingClientRect(), dpr = devicePixelRatio || 1;
+    if (!rect.width) continue;
+    if (c.width !== Math.round(rect.width * dpr)) { c.width = Math.round(rect.width * dpr); c.height = Math.round(rect.height * dpr); }
+    const ctx = c.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const W = rect.width, H = rect.height, v = m.view;
+    const s = Math.min(W / (v.x1 - v.x0), H / (v.y1 - v.y0));
+    const cx = (v.x0 + v.x1) / 2, cy = (v.y0 + v.y1) / 2;
+    const X = (lat, lon) => { const p = proj(lat, lon); return [W / 2 + (p[0] - cx) * s, H / 2 - (p[1] - cy) * s]; };
+    const color = css(ALGS[m.alg].color);
+    const frame = Math.round(progress * m.run.frameCount);
+    const st = stateAt(m.run, frame);
+
+    ctx.fillStyle = colors.surface; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = colors.site;
+    for (const site of SITES) { const [x, y] = X(site[0], site[1]); if (x >= 0 && y >= 0 && x <= W && y <= H) ctx.fillRect(x - .6, y - .6, 1.2, 1.2); }
+
+    // service radius around each stop
+    ctx.strokeStyle = color; ctx.globalAlpha = 0.25; ctx.lineWidth = 1;
+    for (const id of st.route) { const [x, y] = X(SITES[id][0], SITES[id][1]); ctx.beginPath(); ctx.arc(x, y, current.r * s, 0, Math.PI * 2); ctx.stroke(); }
+    ctx.globalAlpha = 1;
+
+    const maxPop = 1453975;
+    TOWNS.forEach((t, i) => {
+      const [x, y] = X(t[0], t[1]); const r = 1.5 + 9 * Math.sqrt(t[2] / maxPop);
+      if (x < -r || y < -r || x > W + r || y > H + r) return;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+      if (st.served.has(i)) { ctx.fillStyle = color; ctx.globalAlpha = 0.7; ctx.fill(); ctx.globalAlpha = 1; }
+      else if (st.planned.has(i)) { ctx.fillStyle = color; ctx.globalAlpha = 0.18; ctx.fill(); ctx.globalAlpha = 1; ctx.strokeStyle = color; ctx.lineWidth = 1; ctx.stroke(); }
+      else { ctx.strokeStyle = colors.town; ctx.lineWidth = 1; ctx.stroke(); }
+    });
+
+    if (st.route.length) {
+      ctx.beginPath(); const d = X(DEPOT[0], DEPOT[1]); ctx.moveTo(d[0], d[1]);
+      for (const id of st.route) { const [x, y] = X(SITES[id][0], SITES[id][1]); ctx.lineTo(x, y); }
+      ctx.closePath(); ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+    }
+    const onRoute = new Set(st.route);
+    for (const [id] of st.anchors) {
+      if (onRoute.has(id)) continue;
+      const [x, y] = X(SITES[id][0], SITES[id][1]);
+      ctx.beginPath(); ctx.arc(x, y, 4.5, 0, Math.PI * 2); ctx.fillStyle = colors.surface; ctx.fill();
+      ctx.strokeStyle = st.skipped.has(id) ? colors.ink2 : color; ctx.lineWidth = 1.6;
+      if (st.skipped.has(id)) ctx.setLineDash([2, 2]);
+      ctx.stroke(); ctx.setLineDash([]);
+    }
+    for (const id of st.route) {
+      const [x, y] = X(SITES[id][0], SITES[id][1]);
+      ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2); ctx.fillStyle = color; ctx.fill();
+      ctx.strokeStyle = colors.surface; ctx.lineWidth = 1.5; ctx.stroke();
+    }
+    const d = X(DEPOT[0], DEPOT[1]);
+    ctx.fillStyle = colors.ink; ctx.fillRect(d[0] - 5, d[1] - 5, 10, 10);
+
+    document.getElementById('f-' + m.alg).textContent = `frame ${frame} / ${m.run.frameCount}`;
+    document.getElementById('s-' + m.alg).innerHTML =
+      `<span class="phase">${esc(st.phase || 'start')}</span> · ${st.route.length} stops · ${fmt1.format(st.km)} / ${current.B} km · ${fmtInt.format(st.pop)} people served`
+      + (st.anchors.size ? `<br>${st.anchors.size} anchors picked · ${st.skipped.size} skipped for budget` : '');
+  }
+  document.getElementById('progress').value = Math.round(progress * 1000);
+}
+
+const playBtn = document.getElementById('play'), speedEl = document.getElementById('speed');
+const speed = () => Math.pow(2, +speedEl.value);
+speedEl.addEventListener('input', () => { document.getElementById('speedLbl').textContent = (+speed().toFixed(2)) + '×'; });
+function setPlaying(p) { playing = p; playBtn.textContent = p ? '❚❚ Pause' : '▶ Play'; if (p) { last = performance.now(); requestAnimationFrame(tick); } }
+function tick(now) {
+  if (!playing) return;
+  progress = Math.min(1, progress + (now - last) / 1000 / PLAY_SECONDS * speed());
+  last = now; drawMaps();
+  if (progress >= 1) setPlaying(false); else requestAnimationFrame(tick);
+}
+playBtn.onclick = () => { if (!playing && progress >= 1) progress = 0; setPlaying(!playing); };
+document.getElementById('restart').onclick = () => { progress = 0; drawMaps(); setPlaying(true); };
+document.getElementById('progress').addEventListener('input', e => { setPlaying(false); progress = e.target.value / 1000; drawMaps(); });
+new ResizeObserver(() => drawMaps()).observe(document.getElementById('maps'));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', drawMaps);
+
+/* ---------- Start ---------- */
+(async function start() {
+  await loadAll();
+  const loading = document.getElementById('loading');
+  if (!scenarios.size) {
+    loading.innerHTML = 'No traces found. Generate them from the project root, for example:<br><code>java -cp out trace.StepTraceMain data/processed 10 180 A-LAZY</code><br><code>java -cp out trace.StepTraceMain data/processed 10 180 B</code>';
+    return;
+  }
+  loading.hidden = true;
+  document.getElementById('content').hidden = false;
+  const wanted = new URL(location.href).searchParams.get('scenario');
+  const first = scenarios.has(wanted) ? wanted
+    : (sortedScenarios().find(s => s.runs['a-lazy'] && s.runs['b']) || sortedScenarios()[0]).key;
+  select(first);
+})();
+</script>
+</body>
+</html>

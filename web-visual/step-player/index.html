@@ -1,0 +1,966 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Solver Step Player</title>
+<style>
+  :root {
+    --bg: #f6f5f1;
+    --panel: #ffffff;
+    --ink: #1d1f23;
+    --muted: #6b6f78;
+    --line: #e2e0d8;
+    --site: #b9b6ab;
+    --town: #7d8290;
+    --served: #1f9d6b;
+    --route: #d9622b;
+    --depot: #1d1f23;
+    --accept: #1f9d6b;
+    --defer: #c2412d;
+    --requeue: #b7871b;
+    --skip: #8a8f99;
+    --reject: #8e3fb5;
+    --focus-fill: rgba(217, 98, 43, 0.10);
+    --chip: #efede6;
+    --shadow: 0 1px 2px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.05);
+    --planned: #3f7fd6;
+    --cell: 63, 127, 214;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15171b;
+      --panel: #1d2026;
+      --ink: #e9e7e1;
+      --muted: #9a9ea8;
+      --line: #2e323a;
+      --site: #464a53;
+      --town: #8d93a1;
+      --served: #3cc48d;
+      --route: #f08a4b;
+      --depot: #f4f2ec;
+      --accept: #3cc48d;
+      --defer: #ef6a55;
+      --requeue: #e0b23e;
+      --skip: #7f848f;
+      --reject: #b57be0;
+      --focus-fill: rgba(240, 138, 75, 0.13);
+      --chip: #262a31;
+      --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+      --planned: #6aa5f5;
+      --cell: 106, 165, 245;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15171b; --panel: #1d2026; --ink: #e9e7e1; --muted: #9a9ea8; --line: #2e323a;
+    --site: #464a53; --town: #8d93a1; --served: #3cc48d; --route: #f08a4b; --depot: #f4f2ec;
+    --accept: #3cc48d; --defer: #ef6a55; --requeue: #e0b23e; --skip: #7f848f; --reject: #b57be0;
+    --focus-fill: rgba(240, 138, 75, 0.13); --chip: #262a31;
+    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+    --planned: #6aa5f5; --cell: 106, 165, 245;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg); color: var(--ink);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    display: grid; grid-template-rows: auto 1fr auto; overflow: hidden;
+  }
+  button, select, input { font: inherit; color: inherit; }
+  header {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px;
+    padding: 10px 16px; border-bottom: 1px solid var(--line); background: var(--panel);
+  }
+  header h1 { font-size: 15px; margin: 0; font-weight: 650; letter-spacing: .01em; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { background: var(--chip); border-radius: 999px; padding: 2px 10px; font-size: 12.5px; color: var(--muted); }
+  .chip b { color: var(--ink); font-weight: 600; }
+  .spacer { flex: 1; }
+  .btn {
+    background: var(--chip); border: 1px solid var(--line); border-radius: 8px;
+    padding: 5px 10px; cursor: pointer; white-space: nowrap;
+  }
+  .btn:hover { border-color: var(--muted); }
+  .btn.primary { background: var(--route); border-color: var(--route); color: #fff; min-width: 74px; }
+  select.btn { padding-right: 6px; }
+  main { display: grid; grid-template-columns: 1fr 380px; min-height: 0; }
+  #mapWrap { position: relative; min-height: 0; }
+  canvas#map { width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+  canvas#map.dragging { cursor: grabbing; }
+  .mapTools { position: absolute; top: 10px; left: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+  .mapTools .btn { background: var(--panel); box-shadow: var(--shadow); }
+  .mapTools label.btn { display: flex; align-items: center; gap: 6px; }
+  .legend {
+    position: absolute; left: 10px; bottom: 10px; background: var(--panel); border-radius: 10px;
+    padding: 8px 10px; box-shadow: var(--shadow); font-size: 12px; color: var(--muted);
+    display: grid; grid-template-columns: auto auto; gap: 3px 14px;
+  }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+  .sw { width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex: none; }
+  #tooltip {
+    position: absolute; pointer-events: none; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 8px; padding: 6px 8px; font-size: 12px; box-shadow: var(--shadow); display: none; max-width: 260px;
+  }
+  aside {
+    border-left: 1px solid var(--line); background: var(--panel); min-height: 0;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border-bottom: 1px solid var(--line); }
+  .stat { background: var(--panel); padding: 9px 12px; }
+  .stat .k { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .stat .v { font-size: 18px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .stat .v small { font-size: 12px; color: var(--muted); font-weight: 500; }
+  .stat.wide { grid-column: span 2; }
+  .bar { height: 6px; border-radius: 3px; background: var(--chip); margin-top: 5px; overflow: hidden; }
+  .bar i { display: block; height: 100%; background: var(--route); width: 0; transition: width .12s; }
+  .card { padding: 12px 14px; border-bottom: 1px solid var(--line); }
+  .card .meta { display: flex; gap: 8px; align-items: center; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  .badge { border-radius: 6px; padding: 1px 7px; font-size: 11.5px; font-weight: 650; color: #fff; text-transform: uppercase; letter-spacing: .04em; }
+  .card h2 { font-size: 16px; margin: 2px 0 8px; font-weight: 650; }
+  .kv { display: grid; grid-template-columns: auto 1fr; gap: 3px 12px; font-size: 13px; margin-bottom: 8px; }
+  .kv dt { color: var(--muted); }
+  .kv dd { margin: 0; font-variant-numeric: tabular-nums; }
+  .why { font-size: 13.5px; margin: 0; }
+  .townsList { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+  .logHead { padding: 8px 14px 4px; font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  #log { overflow-y: auto; flex: 1; min-height: 0; padding: 0 6px 8px; }
+  #log div {
+    display: grid; grid-template-columns: 54px 10px 1fr; gap: 6px; align-items: center;
+    padding: 3px 8px; border-radius: 6px; cursor: pointer; font-size: 12.5px; white-space: nowrap;
+  }
+  #log div:hover { background: var(--chip); }
+  #log div.cur { background: var(--chip); font-weight: 600; }
+  #log .n { color: var(--muted); font-variant-numeric: tabular-nums; text-align: right; }
+  #log .t { overflow: hidden; text-overflow: ellipsis; }
+  footer {
+    background: var(--panel); border-top: 1px solid var(--line); padding: 8px 16px;
+    display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px;
+  }
+  .group { display: flex; align-items: center; gap: 6px; }
+  .group label { color: var(--muted); font-size: 12.5px; }
+  #scrub { flex: 1 1 260px; min-width: 160px; accent-color: var(--route); }
+  #speed { width: 140px; accent-color: var(--route); }
+  #speedLabel { font-variant-numeric: tabular-nums; min-width: 72px; font-size: 12.5px; }
+  #pos { font-variant-numeric: tabular-nums; font-size: 12.5px; color: var(--muted); min-width: 120px; text-align: right; }
+  .checks { display: flex; gap: 10px; font-size: 12.5px; color: var(--muted); }
+  .checks label { display: flex; gap: 4px; align-items: center; }
+  .empty { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; color: var(--muted); padding: 24px; }
+  .empty code { background: var(--chip); padding: 2px 6px; border-radius: 4px; color: var(--ink); }
+  body:not(.hasSelect) .gridOnly { display: none !important; }
+  .ok { color: var(--accept); font-weight: 600; }
+  .bad { color: var(--defer); font-weight: 600; }
+  kbd { background: var(--chip); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; font-size: 11px; }
+  @media (max-width: 860px) {
+    body { overflow: auto; grid-template-rows: auto auto auto; }
+    main { grid-template-columns: 1fr; }
+    #mapWrap { height: 62vh; }
+    aside { border-left: 0; border-top: 1px solid var(--line); max-height: none; }
+    #log { max-height: 260px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Solver Step Player</h1>
+  <select id="traceSelect" class="btn" title="Traces found in traces/manifest.js"></select>
+  <label class="btn" title="Open a step-trace .js or .json file">Open file…<input id="fileInput" type="file" accept=".js,.json" hidden></label>
+  <div class="chips" id="chips"></div>
+  <div class="spacer"></div>
+  <span class="chip" title="Keyboard shortcuts"><kbd>Space</kbd> play · <kbd>←</kbd><kbd>→</kbd> step · <kbd>N</kbd> next stop · <kbd>P</kbd> next phase · <kbd>[</kbd><kbd>]</kbd> speed</span>
+</header>
+
+<main>
+  <div id="mapWrap">
+    <canvas id="map"></canvas>
+    <div class="mapTools">
+      <button class="btn" id="fitBtn" title="Zoom to the whole instance">Fit all</button>
+      <button class="btn" id="routeBtn" title="Zoom to the current route">Fit route</button>
+      <label class="btn" title="Pan to the site being considered"><input type="checkbox" id="follow" checked> Follow step</label>
+      <label class="btn" title="Draw every candidate site"><input type="checkbox" id="showSites" checked> All sites</label>
+    </div>
+    <div class="legend">
+      <span><i class="sw" style="background:var(--site)"></i>Candidate site</span>
+      <span><i class="sw" style="border:1.5px solid var(--town)"></i>Town (area ∝ population)</span>
+      <span><i class="sw" style="background:var(--served)"></i>Town served</span>
+      <span><i class="sw" style="background:var(--route)"></i>Route stop (# = order chosen)</span>
+      <span><i class="sw" style="background:var(--defer)"></i>Deferred site</span>
+      <span><i class="sw" style="border:1.5px dashed var(--muted)"></i>Rival / runner-up</span>
+      <span class="gridOnly"><i class="sw" style="border:2px solid var(--route);background:transparent"></i>Anchor selected, not routed</span>
+      <span class="gridOnly"><i class="sw" style="background:var(--planned)"></i>Town planned by selection</span>
+      <span class="gridOnly"><i class="sw" style="border-radius:2px;background:rgba(var(--cell),.35)"></i>Grid cell (shade = best gain)</span>
+    </div>
+    <div id="tooltip"></div>
+    <div class="empty" id="empty">
+      <div>
+        <p><b>No trace loaded.</b></p>
+        <p>Generate one from the project root, then reload this page:</p>
+        <p><code>java -cp out trace.StepTraceMain data/processed 10 180 A-LAZY</code></p>
+        <p>or use <b>Open file…</b> to pick a trace.</p>
+      </div>
+    </div>
+  </div>
+
+  <aside>
+    <div class="stats">
+      <div class="stat"><div class="k">Population served</div><div class="v" id="sPop">0</div></div>
+      <div class="stat"><div class="k">Towns served</div><div class="v" id="sTowns">0</div></div>
+      <div class="stat wide"><div class="k">Route length / budget</div><div class="v" id="sKm">0</div><div class="bar"><i id="sKmBar"></i></div></div>
+      <div class="stat"><div class="k">Stops on route</div><div class="v" id="sStops">0</div></div>
+      <div class="stat"><div class="k">Deferred (waiting)</div><div class="v" id="sDeferred">0</div></div>
+      <div class="stat gridOnly"><div class="k">Anchors selected</div><div class="v" id="sAnchors">0</div></div>
+      <div class="stat gridOnly"><div class="k">Planned population</div><div class="v" id="sPlanned">0</div></div>
+    </div>
+    <div class="card" id="card"></div>
+    <div class="logHead">Recent steps (click to jump)</div>
+    <div id="log"></div>
+  </aside>
+</main>
+
+<footer>
+  <div class="group">
+    <button class="btn" id="startBtn" title="Back to the start (Home)">⏮</button>
+    <button class="btn" id="backBtn" title="Previous step (←)">◀</button>
+    <button class="btn primary" id="playBtn" title="Play / pause (Space)">▶ Play</button>
+    <button class="btn" id="fwdBtn" title="Next step (→)">▶|</button>
+    <button class="btn" id="nextStopBtn" title="Run to the next stop added (N)">Next stop</button>
+    <button class="btn" id="nextPhaseBtn" title="Run to the next phase (P)">Next phase</button>
+    <button class="btn" id="endBtn" title="Jump to the end (End)">⏭</button>
+  </div>
+  <div class="group">
+    <label for="speed">Speed</label>
+    <input id="speed" type="range" min="0" max="100" value="40">
+    <span id="speedLabel"></span>
+  </div>
+  <div class="group">
+    <label for="detail">Show</label>
+    <select id="detail" class="btn" title="Which steps you step through and see. Hidden steps still run.">
+      <option value="all">Every step</option>
+      <option value="noskip">Hide dropped (gain 0)</option>
+      <option value="decisions">Accepts and stops only</option>
+      <option value="stops">Route changes only</option>
+    </select>
+  </div>
+  <div class="checks" title="Playback pauses automatically on these">
+    <span>Pause on:</span>
+    <label><input type="checkbox" id="pauseStop"> new stop</label>
+    <label><input type="checkbox" id="pausePhase" checked> phase</label>
+  </div>
+  <input id="scrub" type="range" min="0" max="0" value="0">
+  <span id="pos">–</span>
+</footer>
+
+<script src="traces/manifest.js" onerror="window.STEP_TRACE_MANIFEST = []"></script>
+<script>
+'use strict';
+
+/* ---------- Formatting ---------- */
+const fmtInt = new Intl.NumberFormat('en-US');
+const fmt1 = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1, minimumFractionDigits: 1 });
+const fmtKm = v => v == null ? '–' : fmt1.format(v) + ' km';
+const fmtScore = v => v == null ? '–' : (v > 1e9 ? '≈∞' : fmtInt.format(Math.round(v))) + ' people/km';
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+const OUTCOME = {
+  accept:  { label: 'Accept',  verb: 'Accepted',    color: '--accept' },
+  defer:   { label: 'Defer',   verb: 'Deferred',    color: '--defer' },
+  requeue: { label: 'Requeue', verb: 'Pushed back', color: '--requeue' },
+  skip:    { label: 'Drop',    verb: 'Dropped',     color: '--skip' },
+  reject:  { label: 'Reject',  verb: 'Rejected',    color: '--reject' },
+};
+
+/* ---------- Theme colours for the canvas ---------- */
+let C = {};
+function readColors() {
+  const cs = getComputedStyle(document.documentElement);
+  for (const k of ['bg','ink','muted','line','site','town','served','route','depot','accept','defer','requeue','skip','reject','focus-fill','panel','planned','cell'])
+    C[k] = cs.getPropertyValue('--' + k).trim();
+}
+readColors();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { readColors(); baseDirty = true; requestDraw(); });
+
+/* ---------- Trace + replay state ---------- */
+let T = null;          // loaded trace
+let X = null;          // precomputed planar coordinates
+let S = null;          // replay state after `cursor` events
+let cursor = 0;        // number of events applied
+let snaps = [];        // snapshots every SNAP events
+const SNAP = 250;
+let playing = false;
+
+function freshState() {
+  const ns = T.sites.length, nt = T.towns.length, nc = T.grid ? T.grid.cells.length : 0;
+  return {
+    route: [], routeKm: 0, phase: null,
+    order: new Int32Array(ns), stopsAdded: 0,
+    deferred: new Uint8Array(ns), deferredCount: 0, refilled: 0,
+    served: new Uint8Array(nt), pop: 0, towns: 0,
+    gainMismatches: 0,
+    // select-then-route solvers
+    selOrder: new Int32Array(ns), selected: 0,
+    planned: new Uint8Array(nt), plannedPop: 0, plannedTowns: 0,
+    // grid overlay
+    gridOn: false, cellSite: new Int32Array(nc).fill(-1), cellGain: new Float64Array(nc), cellStatus: new Uint8Array(nc),
+  };
+}
+function cloneState(s) {
+  return {
+    ...s, route: s.route.slice(), order: s.order.slice(), deferred: s.deferred.slice(), served: s.served.slice(),
+    selOrder: s.selOrder.slice(), planned: s.planned.slice(),
+    cellSite: s.cellSite.slice(), cellGain: s.cellGain.slice(), cellStatus: s.cellStatus.slice(),
+  };
+}
+
+function apply(ev) {
+  const s = S;
+  switch (ev.kind) {
+    case 'phase': s.phase = ev.name; break;
+    case 'consider':
+      if (ev.outcome === 'defer' && !s.deferred[ev.site]) { s.deferred[ev.site] = 1; s.deferredCount++; }
+      break;
+    case 'insert': {
+      s.route.splice(ev.position, 0, ev.site);
+      s.order[ev.site] = ++s.stopsAdded;
+      if (s.deferred[ev.site]) { s.deferred[ev.site] = 0; s.deferredCount--; s.refilled++; }
+      let gained = 0;
+      for (const t of ev.towns) {
+        if (!s.served[t]) { s.served[t] = 1; s.towns++; s.pop += T.towns[t][2]; gained += T.towns[t][2]; }
+      }
+      if (gained !== ev.gain) s.gainMismatches++;
+      s.routeKm = ev.routeKm;
+      break;
+    }
+    case 'route': s.route = ev.stops.slice(); s.routeKm = ev.routeKm; break;
+    case 'select':
+      s.selOrder[ev.site] = ++s.selected;
+      for (const t of ev.towns) {
+        if (!s.planned[t]) { s.planned[t] = 1; s.plannedTowns++; s.plannedPop += T.towns[t][2]; }
+      }
+      break;
+    case 'grid': s.gridOn = true; break;
+    case 'cell':
+      s.cellSite[ev.cell] = ev.site == null ? -1 : ev.site;
+      s.cellGain[ev.cell] = ev.gain;
+      s.cellStatus[ev.cell] = ev.status === 'open' ? 1 : 2;
+      break;
+  }
+}
+
+function seek(target) {
+  target = Math.max(0, Math.min(T.events.length, target));
+  if (target < cursor) {
+    const k = Math.floor(target / SNAP);
+    S = cloneState(snaps[k]);
+    cursor = k * SNAP;
+  }
+  while (cursor < target) {
+    apply(T.events[cursor]);
+    cursor++;
+    if (cursor % SNAP === 0 && !snaps[cursor / SNAP]) snaps[cursor / SNAP] = cloneState(S);
+  }
+  onCursorChange();
+}
+
+/* ---------- Detail levels ---------- */
+function visible(ev) {
+  const level = detailSel.value;
+  if (level === 'all') return true;
+  if (ev.kind === 'phase' || ev.kind === 'result') return true;
+  if (level === 'noskip') return !(ev.kind === 'consider' && ev.outcome === 'skip');
+  if (level === 'decisions') return ev.kind === 'insert' || ev.kind === 'route' || ev.kind === 'note'
+    || ev.kind === 'select' || ev.kind === 'grid';
+  return ev.kind === 'insert' || ev.kind === 'route';
+}
+const isStopEvent = ev => ev.kind === 'insert' || ev.kind === 'route' || ev.kind === 'select';
+function nextVisibleIndex(from) {           // returns cursor value after the next visible event
+  for (let i = from; i < T.events.length; i++) if (visible(T.events[i])) return i + 1;
+  return T.events.length;
+}
+function prevVisibleIndex(from) {
+  for (let i = from - 2; i >= 0; i--) if (visible(T.events[i])) return i + 1;
+  return 0;
+}
+function runUntil(pred) {
+  for (let i = cursor; i < T.events.length; i++) if (pred(T.events[i])) { seek(i + 1); return; }
+  seek(T.events.length);
+}
+
+/* ---------- Loading ---------- */
+const traceSel = document.getElementById('traceSelect');
+const detailSel = document.getElementById('detail');
+
+function loadTraceByName(name) {
+  pause();
+  window.STEP_TRACE = undefined;
+  const script = document.createElement('script');
+  script.src = 'traces/' + encodeURIComponent(name) + '.js';
+  script.onload = () => { if (window.STEP_TRACE) init(window.STEP_TRACE); script.remove(); };
+  script.onerror = () => { alert('Could not load traces/' + name + '.js'); script.remove(); };
+  document.body.appendChild(script);
+  const url = new URL(location.href); url.searchParams.set('trace', name); history.replaceState(null, '', url);
+}
+
+document.getElementById('fileInput').addEventListener('change', async e => {
+  const file = e.target.files[0]; if (!file) return;
+  let text = (await file.text()).trim();
+  text = text.replace(/^window\.STEP_TRACE\s*=\s*/, '').replace(/;\s*$/, '');
+  try { init(JSON.parse(text)); } catch (err) { alert('Not a step-trace file: ' + err.message); }
+  e.target.value = '';
+});
+
+traceSel.addEventListener('change', () => loadTraceByName(traceSel.value));
+
+function init(trace) {
+  if (trace.schemaVersion !== 1) { alert('Unsupported trace schema version: ' + trace.schemaVersion); return; }
+  T = trace;
+  const lat0 = (Math.min(...T.sites.map(s => s[0])) + Math.max(...T.sites.map(s => s[0]))) / 2;
+  const lon0 = T.depot[1];
+  const kx = 111.32 * Math.cos(lat0 * Math.PI / 180), ky = 110.574;
+  const proj = (lat, lon) => [(lon - lon0) * kx, (lat - lat0) * ky];
+  const sx = new Float64Array(T.sites.length), sy = new Float64Array(T.sites.length);
+  T.sites.forEach((s, i) => { const p = proj(s[0], s[1]); sx[i] = p[0]; sy[i] = p[1]; });
+  const tx = new Float64Array(T.towns.length), ty = new Float64Array(T.towns.length);
+  let maxPop = 1;
+  T.towns.forEach((t, i) => { const p = proj(t[0], t[1]); tx[i] = p[0]; ty[i] = p[1]; maxPop = Math.max(maxPop, t[2]); });
+  const d = proj(T.depot[0], T.depot[1]);
+  X = { sx, sy, tx, ty, dx: d[0], dy: d[1], maxPop };
+
+  // Grid overlay: cells become km rectangles in the player's own projection.
+  T.grid = null;
+  const gridEv = T.events.find(e => e.kind === 'grid');
+  if (gridEv) {
+    const cells = gridEv.cells.map(c => { const a = proj(c[0], c[1]), b = proj(c[2], c[3]); return [a[0], a[1], b[0], b[1]]; });
+    let maxGain = 1;
+    for (const e of T.events) if (e.kind === 'cell') maxGain = Math.max(maxGain, e.gain);
+    T.grid = { cells, maxGain, cellKm: gridEv.cellKm };
+  }
+  document.body.classList.toggle('hasSelect', T.events.some(e => e.kind === 'select'));
+
+  const counts = { consider: 0, insert: 0, accept: 0, defer: 0, requeue: 0, skip: 0, route: 0 };
+  for (const ev of T.events) {
+    counts[ev.kind] = (counts[ev.kind] || 0) + 1;
+    if (ev.kind === 'consider') counts[ev.outcome] = (counts[ev.outcome] || 0) + 1;
+  }
+  T.counts = counts;
+
+  document.getElementById('chips').innerHTML = [
+    `<span class="chip"><b>${esc(T.algorithm)}</b></span>`,
+    `<span class="chip">r = <b>${T.radiusKm} km</b></span>`,
+    `<span class="chip">B = <b>${T.budgetKm} km</b></span>`,
+    `<span class="chip"><b>${fmtInt.format(T.sites.length)}</b> sites · <b>${T.towns.length}</b> towns</span>`,
+    `<span class="chip" title="consider steps by outcome"><b>${fmtInt.format(T.events.length)}</b> steps: ${fmtInt.format(counts.accept)} accept · ${fmtInt.format(counts.requeue)} requeue · ${fmtInt.format(counts.defer)} defer · ${fmtInt.format(counts.skip)} drop${counts.cell ? ` · ${fmtInt.format(counts.cell)} cell refresh` : ''}</span>`,
+  ].join('');
+
+  S = freshState(); snaps = [cloneState(S)]; cursor = 0;
+  scrub.max = T.events.length;
+  document.getElementById('empty').style.display = 'none';
+  fitAll();
+  onCursorChange();
+}
+
+/* ---------- Map view ---------- */
+const canvas = document.getElementById('map');
+const ctx = canvas.getContext('2d');
+const base = document.createElement('canvas');
+const bctx = base.getContext('2d');
+let W = 0, H = 0, dpr = 1;
+let view = { cx: 0, cy: 0, s: 1 };
+let baseDirty = true, drawQueued = false;
+
+const toSX = x => W / 2 + (x - view.cx) * view.s;
+const toSY = y => H / 2 - (y - view.cy) * view.s;
+
+function resize() {
+  const r = canvas.getBoundingClientRect();
+  dpr = window.devicePixelRatio || 1;
+  W = r.width; H = r.height;
+  for (const c of [canvas, base]) { c.width = Math.round(W * dpr); c.height = Math.round(H * dpr); }
+  if (T && needsFit && W > 0 && H > 0) fitAll();
+  baseDirty = true; requestDraw();
+}
+let needsFit = true;
+new ResizeObserver(resize).observe(canvas);
+
+function ensureSize() {   // the resize observer can lag behind layout, so measure on demand
+  if (!W || !H) { const r = canvas.getBoundingClientRect(); if (r.width && r.height) resize(); }
+}
+function fitBox(x0, y0, x1, y1, pad = 40) {
+  ensureSize();
+  if (W <= 2 * pad || H <= 2 * pad) { needsFit = true; return; }
+  needsFit = false;
+  const w = Math.max(x1 - x0, 1), h = Math.max(y1 - y0, 1);
+  view.s = Math.min((W - 2 * pad) / w, (H - 2 * pad) / h);
+  view.cx = (x0 + x1) / 2; view.cy = (y0 + y1) / 2;
+  baseDirty = true; requestDraw();
+}
+function fitAll() {
+  if (!T) return;
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (let i = 0; i < X.sx.length; i++) { x0 = Math.min(x0, X.sx[i]); x1 = Math.max(x1, X.sx[i]); y0 = Math.min(y0, X.sy[i]); y1 = Math.max(y1, X.sy[i]); }
+  fitBox(x0, y0, x1, y1, 24);
+}
+function fitRoute() {
+  if (!T) return;
+  let x0 = X.dx, x1 = X.dx, y0 = X.dy, y1 = X.dy;
+  for (const id of S.route) { x0 = Math.min(x0, X.sx[id]); x1 = Math.max(x1, X.sx[id]); y0 = Math.min(y0, X.sy[id]); y1 = Math.max(y1, X.sy[id]); }
+  const r = T.radiusKm;
+  fitBox(x0 - r, y0 - r, x1 + r, y1 + r);
+}
+document.getElementById('fitBtn').onclick = fitAll;
+document.getElementById('routeBtn').onclick = fitRoute;
+document.getElementById('showSites').onchange = () => { baseDirty = true; requestDraw(); };
+
+function requestDraw() {
+  if (drawQueued) return;
+  drawQueued = true;
+  requestAnimationFrame(() => { drawQueued = false; draw(); });
+}
+
+function drawBase() {
+  bctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  bctx.fillStyle = C.bg; bctx.fillRect(0, 0, W, H);
+  if (!T || !document.getElementById('showSites').checked) return;
+  bctx.fillStyle = C.site;
+  const sz = view.s > 8 ? 2.2 : 1.3;
+  for (let i = 0; i < X.sx.length; i++) {
+    const x = toSX(X.sx[i]), y = toSY(X.sy[i]);
+    if (x < -2 || y < -2 || x > W + 2 || y > H + 2) continue;
+    bctx.fillRect(x - sz / 2, y - sz / 2, sz, sz);
+  }
+}
+
+function currentEvent() { return cursor > 0 ? T.events[cursor - 1] : null; }
+
+function neighbours(route, position) {   // coordinates either side of an insertion position
+  const a = position === 0 ? [X.dx, X.dy] : [X.sx[route[position - 1]], X.sy[route[position - 1]]];
+  const b = position >= route.length ? [X.dx, X.dy] : [X.sx[route[position]], X.sy[route[position]]];
+  return [a, b];
+}
+
+function draw() {
+  ensureSize();
+  if (!canvas.width || !canvas.height) return;
+  if (baseDirty) { drawBase(); baseDirty = false; }
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(base, 0, 0);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  if (!T) return;
+
+  const ev = currentEvent();
+  const focusSite = ev && (ev.kind === 'consider' || ev.kind === 'insert' || ev.kind === 'select'
+    || (ev.kind === 'cell' && ev.site != null)) ? ev.site : -1;
+
+  // Grid cells, shaded by each cell's current best gain
+  if (T.grid && S.gridOn) {
+    const g = T.grid;
+    ctx.lineWidth = 1;
+    for (let c = 0; c < g.cells.length; c++) {
+      const [x0, y0, x1, y1] = g.cells[c];
+      const sx0 = toSX(x0), sy1 = toSY(y1), w = (x1 - x0) * view.s, h = (y1 - y0) * view.s;
+      if (sx0 > W || sy1 > H || sx0 + w < 0 || sy1 + h < 0) continue;
+      if (S.cellStatus[c] === 1) {
+        const a = 0.08 + 0.5 * Math.sqrt(S.cellGain[c] / g.maxGain);
+        ctx.fillStyle = `rgba(${C.cell}, ${a.toFixed(3)})`;
+        ctx.fillRect(sx0, sy1, w, h);
+      }
+      if (w > 4) { ctx.strokeStyle = `rgba(${C.cell}, 0.35)`; ctx.strokeRect(sx0, sy1, w, h); }
+    }
+    if (ev && ev.cell != null) {
+      const [x0, y0, x1, y1] = g.cells[ev.cell];
+      const cw = x1 - x0, ch = y1 - y0;
+      ctx.setLineDash([5, 4]); ctx.strokeStyle = C.ink; ctx.lineWidth = 1.2;
+      ctx.strokeRect(toSX(x0 - cw), toSY(y1 + ch), 3 * cw * view.s, 3 * ch * view.s);
+      ctx.setLineDash([]); ctx.lineWidth = 2.2; ctx.strokeStyle = C.route;
+      ctx.strokeRect(toSX(x0), toSY(y1), cw * view.s, ch * view.s);
+    }
+  }
+
+  // Deferred sites
+  ctx.fillStyle = C.defer; ctx.globalAlpha = 0.55;
+  const dsz = view.s > 8 ? 3 : 2;
+  for (let i = 0; i < X.sx.length; i++) {
+    if (!S.deferred[i]) continue;
+    const x = toSX(X.sx[i]), y = toSY(X.sy[i]);
+    if (x < -3 || y < -3 || x > W + 3 || y > H + 3) continue;
+    ctx.fillRect(x - dsz / 2, y - dsz / 2, dsz, dsz);
+  }
+  ctx.globalAlpha = 1;
+
+  // Focus service ring (behind towns)
+  if (focusSite >= 0) {
+    const col = ev.kind === 'cell' ? C.planned : C[(OUTCOME[ev.outcome] || OUTCOME.accept).color.slice(2)] || C.route;
+    const fx = toSX(X.sx[focusSite]), fy = toSY(X.sy[focusSite]);
+    ctx.beginPath(); ctx.arc(fx, fy, Math.max(T.radiusKm * view.s, 3), 0, Math.PI * 2);
+    ctx.fillStyle = C['focus-fill']; ctx.fill();
+    ctx.setLineDash([4, 3]); ctx.strokeStyle = col; ctx.lineWidth = 1.2; ctx.stroke(); ctx.setLineDash([]);
+  }
+
+  // Towns
+  const newly = ev && (ev.kind === 'insert' || ev.kind === 'select') ? new Set(ev.towns) : null;
+  for (let i = 0; i < X.tx.length; i++) {
+    const x = toSX(X.tx[i]), y = toSY(X.ty[i]);
+    const r = 1.6 + 11 * Math.sqrt(T.towns[i][2] / X.maxPop);
+    if (x < -r || y < -r || x > W + r || y > H + r) continue;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2);
+    if (S.served[i]) { ctx.fillStyle = C.served; ctx.globalAlpha = 0.75; ctx.fill(); ctx.globalAlpha = 1; }
+    else if (S.planned[i]) { ctx.fillStyle = C.planned; ctx.globalAlpha = 0.55; ctx.fill(); ctx.globalAlpha = 1; }
+    else { ctx.strokeStyle = C.town; ctx.lineWidth = 1.1; ctx.stroke(); }
+    if (newly && newly.has(i)) { ctx.beginPath(); ctx.arc(x, y, r + 3, 0, Math.PI * 2); ctx.strokeStyle = C.ink; ctx.lineWidth = 1.5; ctx.stroke(); }
+  }
+
+  // Route
+  if (S.route.length) {
+    ctx.beginPath(); ctx.moveTo(toSX(X.dx), toSY(X.dy));
+    for (const id of S.route) ctx.lineTo(toSX(X.sx[id]), toSY(X.sy[id]));
+    ctx.closePath();
+    ctx.strokeStyle = C.route; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+  }
+
+  // Proposed insertion for a consider step
+  if (ev && ev.kind === 'consider' && ev.position != null && ev.outcome !== 'skip') {
+    const col = C[OUTCOME[ev.outcome].color.slice(2)];
+    const [a, b] = neighbours(S.route, ev.position);
+    const p = [X.sx[ev.site], X.sy[ev.site]];
+    ctx.setLineDash([2, 4]); ctx.strokeStyle = C.muted; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(toSX(a[0]), toSY(a[1])); ctx.lineTo(toSX(b[0]), toSY(b[1])); ctx.stroke();
+    ctx.setLineDash([6, 4]); ctx.strokeStyle = col; ctx.lineWidth = 1.8;
+    ctx.beginPath(); ctx.moveTo(toSX(a[0]), toSY(a[1])); ctx.lineTo(toSX(p[0]), toSY(p[1])); ctx.lineTo(toSX(b[0]), toSY(b[1])); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Depot (under the stops, since a stop can sit on it)
+  { const x = toSX(X.dx), y = toSY(X.dy);
+    ctx.fillStyle = C.depot; ctx.fillRect(x - 7, y - 7, 14, 14);
+    ctx.strokeStyle = C.panel; ctx.lineWidth = 1.5; ctx.strokeRect(x - 7, y - 7, 14, 14); }
+
+  // Anchors that were selected but are not on the route (yet)
+  if (S.selected) {
+    const onRoute = new Set(S.route);
+    const big = S.selected <= 80 || view.s > 6;
+    ctx.font = '600 9px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (let i = 0; i < S.selOrder.length; i++) {
+      if (!S.selOrder[i] || onRoute.has(i)) continue;
+      const x = toSX(X.sx[i]), y = toSY(X.sy[i]);
+      if (x < -10 || y < -10 || x > W + 10 || y > H + 10) continue;
+      ctx.beginPath(); ctx.arc(x, y, big ? 7 : 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = C.panel; ctx.fill();
+      ctx.strokeStyle = S.deferred[i] ? C.defer : C.route; ctx.lineWidth = 1.8; ctx.stroke();
+      if (big) { ctx.fillStyle = C.ink; ctx.fillText(S.selOrder[i], x, y + 0.5); }
+    }
+  }
+
+  // Stops with selection order
+  const showLabels = S.route.length <= 80 || view.s > 6;
+  ctx.font = '600 10px system-ui, sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (const id of S.route) {
+    const x = toSX(X.sx[id]), y = toSY(X.sy[id]);
+    ctx.beginPath(); ctx.arc(x, y, showLabels ? 7.5 : 3.5, 0, Math.PI * 2);
+    ctx.fillStyle = C.route; ctx.fill(); ctx.strokeStyle = C.panel; ctx.lineWidth = 1.5; ctx.stroke();
+    if (showLabels) { ctx.fillStyle = '#fff'; ctx.fillText(S.order[id], x, y + 0.5); }
+  }
+
+  // Rival
+  if (ev && ev.kind === 'consider' && ev.rival != null) {
+    const x = toSX(X.sx[ev.rival]), y = toSY(X.sy[ev.rival]);
+    ctx.setLineDash([3, 3]); ctx.strokeStyle = C.ink; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(x, y, 8, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+    label(x + 11, y, 'rival', C.muted);
+  }
+
+  // Focus marker on top
+  if (focusSite >= 0) {
+    const col = ev.kind === 'cell' ? C.planned : C[(OUTCOME[ev.outcome] || OUTCOME.accept).color.slice(2)] || C.route;
+    const x = toSX(X.sx[focusSite]), y = toSY(X.sy[focusSite]);
+    ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI * 2);
+    ctx.fillStyle = col; ctx.fill(); ctx.strokeStyle = C.panel; ctx.lineWidth = 2; ctx.stroke();
+    label(x + 10, y - 12, T.sites[focusSite][2], C.ink);
+  }
+}
+
+function label(x, y, text, color) {
+  ctx.font = '600 12px system-ui, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+  ctx.lineWidth = 3.5; ctx.strokeStyle = C.bg; ctx.strokeText(text, x, y);
+  ctx.fillStyle = color; ctx.fillText(text, x, y);
+}
+
+/* Pan and zoom */
+let drag = null;
+canvas.addEventListener('pointerdown', e => { drag = { x: e.clientX, y: e.clientY, moved: false }; canvas.setPointerCapture(e.pointerId); canvas.classList.add('dragging'); });
+canvas.addEventListener('pointermove', e => {
+  if (drag) {
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (Math.abs(dx) + Math.abs(dy) > 2) { drag.moved = true; followBox.checked = false; }
+    view.cx -= dx / view.s; view.cy += dy / view.s; drag.x = e.clientX; drag.y = e.clientY;
+    baseDirty = true; requestDraw(); tooltip.style.display = 'none';
+  } else hover(e);
+});
+canvas.addEventListener('pointerup', () => { drag = null; canvas.classList.remove('dragging'); });
+canvas.addEventListener('pointerleave', () => { tooltip.style.display = 'none'; });
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  const r = canvas.getBoundingClientRect();
+  const mx = e.clientX - r.left, my = e.clientY - r.top;
+  const wx = view.cx + (mx - W / 2) / view.s, wy = view.cy - (my - H / 2) / view.s;
+  view.s *= Math.exp(-e.deltaY * 0.0015);
+  view.s = Math.max(0.2, Math.min(view.s, 400));
+  view.cx = wx - (mx - W / 2) / view.s; view.cy = wy + (my - H / 2) / view.s;
+  baseDirty = true; requestDraw();
+}, { passive: false });
+
+const tooltip = document.getElementById('tooltip');
+function hover(e) {
+  if (!T) return;
+  const r = canvas.getBoundingClientRect();
+  const mx = e.clientX - r.left, my = e.clientY - r.top;
+  let best = null, bestD = 10;
+  for (let i = 0; i < X.tx.length; i++) {
+    const rad = 1.6 + 11 * Math.sqrt(T.towns[i][2] / X.maxPop);
+    const d = Math.hypot(toSX(X.tx[i]) - mx, toSY(X.ty[i]) - my) - rad;
+    if (d < bestD) { bestD = d; best = { kind: 'town', i }; }
+  }
+  if (!best) {
+    bestD = 6;
+    for (let i = 0; i < X.sx.length; i++) {
+      const d = Math.hypot(toSX(X.sx[i]) - mx, toSY(X.sy[i]) - my);
+      if (d < bestD) { bestD = d; best = { kind: 'site', i }; }
+    }
+  }
+  if (!best) { tooltip.style.display = 'none'; return; }
+  let html;
+  if (best.kind === 'town') {
+    const t = T.towns[best.i];
+    html = `<b>${esc(t[3])}</b><br>Town · population ${fmtInt.format(t[2])}<br>${S.served[best.i] ? '<span class="ok">served</span>' : S.planned[best.i] ? 'planned by selection, not served yet' : 'not served yet'}`;
+  } else {
+    const i = best.i;
+    const state = S.order[i] && S.route.includes(i) ? `stop #${S.order[i]} on route`
+      : S.deferred[i] ? '<span class="bad">deferred</span>'
+      : S.selOrder[i] ? `anchor ${S.selOrder[i]}, not routed yet` : 'candidate';
+    html = `<b>${esc(T.sites[i][2])}</b><br>Site ${i} · ${state}`;
+  }
+  tooltip.innerHTML = html;
+  tooltip.style.display = 'block';
+  tooltip.style.left = Math.min(mx + 14, W - 270) + 'px';
+  tooltip.style.top = (my + 14) + 'px';
+}
+
+/* ---------- Side panel ---------- */
+const scrub = document.getElementById('scrub');
+const followBox = document.getElementById('follow');
+const card = document.getElementById('card');
+const logEl = document.getElementById('log');
+
+function siteName(i) { return T.sites[i][2]; }
+function badge(text, colorVar) { return `<span class="badge" style="background:var(${colorVar})">${esc(text)}</span>`; }
+
+function insertionPlace(route, position) {
+  const a = position === 0 ? 'depot' : siteName(route[position - 1]);
+  const b = position >= route.length ? 'depot' : siteName(route[position]);
+  return `between ${esc(a)} and ${esc(b)}`;
+}
+
+function renderCard() {
+  const ev = currentEvent();
+  const stepTxt = `Step ${fmtInt.format(cursor)} of ${fmtInt.format(T.events.length)}`;
+  const phaseTxt = S.phase ? ` · phase: <b>${esc(S.phase)}</b>` : '';
+  if (!ev) {
+    card.innerHTML = `<div class="meta">${stepTxt}</div><h2>Ready</h2><p class="why">Press <b>Play</b>, or step with <kbd>→</kbd>. The square is the depot; grey dots are candidate sites; hollow circles are towns sized by population.</p>`;
+    return;
+  }
+  let h = `<div class="meta">${stepTxt}${phaseTxt}</div>`;
+  if (ev.kind === 'phase') {
+    h += `<div class="meta">${badge('Phase', '--ink')}</div><h2>${esc(ev.name)}</h2><p class="why">${esc(ev.text)}</p>`;
+  } else if (ev.kind === 'note') {
+    h += `<div class="meta">${badge('Note', '--muted')}</div><p class="why">${esc(ev.text)}</p>`;
+  } else if (ev.kind === 'consider') {
+    const o = OUTCOME[ev.outcome] || { label: ev.outcome, verb: ev.outcome, color: '--muted' };
+    h += `<div class="meta">${badge(o.label, o.color)}</div><h2>${esc(o.verb)}: ${esc(siteName(ev.site))}</h2><dl class="kv">`;
+    h += `<dt>New population</dt><dd>${fmtInt.format(ev.gain)}</dd>`;
+    if (ev.addedKm != null) h += `<dt>Extra route</dt><dd>${fmtKm(ev.addedKm)}${ev.position != null ? ' · ' + insertionPlace(S.route, ev.position) : ''}</dd>`;
+    if (ev.addedKm != null) h += `<dt>Score</dt><dd>${fmtScore(ev.score)}</dd>`;
+    else if (ev.cell != null) h += `<dt>Extra route</dt><dd>not considered (coverage-only selection)</dd>`;
+    if (ev.rival != null) h += `<dt>${ev.addedKm == null ? 'Next in heap' : 'Rival'}</dt><dd>${esc(siteName(ev.rival))} · ${ev.addedKm == null ? fmtInt.format(ev.rivalScore) + ' people' : fmtScore(ev.rivalScore)}</dd>`;
+    if (ev.cell != null) h += `<dt>Grid cell</dt><dd>#${ev.cell}</dd>`;
+    if (ev.outcome === 'defer') h += `<dt>Would make route</dt><dd>${fmtKm(S.routeKm + ev.addedKm)} (budget ${fmtKm(T.budgetKm)})</dd>`;
+    h += `</dl><p class="why">${esc(ev.text)}</p>`;
+  } else if (ev.kind === 'insert') {
+    const prev = cursor >= 2 ? T.events[cursor - 2] : null;
+    h += `<div class="meta">${badge('Stop added', '--route')}</div><h2>#${S.order[ev.site]} ${esc(siteName(ev.site))}</h2><dl class="kv">`;
+    h += `<dt>New population</dt><dd>${fmtInt.format(ev.gain)} in ${ev.towns.length} town${ev.towns.length === 1 ? '' : 's'}</dd>`;
+    h += `<dt>Extra route</dt><dd>${fmtKm(ev.addedKm)}</dd>`;
+    if (prev && prev.kind === 'consider' && prev.site === ev.site && prev.score != null) h += `<dt>Score</dt><dd>${fmtScore(prev.score)}</dd>`;
+    h += `<dt>Route now</dt><dd>${fmtKm(ev.routeKm)} of ${fmtKm(T.budgetKm)}</dd></dl>`;
+    h += `<p class="why">${esc(ev.text)}</p>`;
+    if (prev && prev.kind === 'consider' && prev.site === ev.site) h += `<p class="why" style="color:var(--muted);margin-top:6px">Why: ${esc(prev.text)}</p>`;
+    const towns = ev.towns.map(t => T.towns[t]).sort((a, b) => b[2] - a[2]);
+    if (towns.length) h += `<div class="townsList">Newly served: ${towns.slice(0, 6).map(t => `${esc(t[3])} (${fmtInt.format(t[2])})`).join(', ')}${towns.length > 6 ? `, +${towns.length - 6} more` : ''}</div>`;
+  } else if (ev.kind === 'select') {
+    const prev = cursor >= 2 ? T.events[cursor - 2] : null;
+    h += `<div class="meta">${badge('Anchor selected', '--planned')}</div><h2>Anchor ${S.selOrder[ev.site]}: ${esc(siteName(ev.site))}</h2><dl class="kv">`;
+    h += `<dt>New planned pop.</dt><dd>${fmtInt.format(ev.gain)} in ${ev.towns.length} town${ev.towns.length === 1 ? '' : 's'}</dd>`;
+    if (ev.cell != null) h += `<dt>Grid cell</dt><dd>#${ev.cell} (dashed box = the 3x3 block refreshed next)</dd>`;
+    h += `<dt>On route?</dt><dd>Not yet. Routing happens after selection ends.</dd></dl>`;
+    h += `<p class="why">${esc(ev.text)}</p>`;
+    if (prev && prev.kind === 'consider' && prev.site === ev.site) h += `<p class="why" style="color:var(--muted);margin-top:6px">Why: ${esc(prev.text)}</p>`;
+    const towns = ev.towns.map(t => T.towns[t]).sort((a, b) => b[2] - a[2]);
+    if (towns.length) h += `<div class="townsList">Newly planned: ${towns.slice(0, 6).map(t => `${esc(t[3])} (${fmtInt.format(t[2])})`).join(', ')}${towns.length > 6 ? `, +${towns.length - 6} more` : ''}</div>`;
+  } else if (ev.kind === 'grid') {
+    h += `<div class="meta">${badge('Grid built', '--planned')}</div><h2>${fmtInt.format(ev.cells.length)} grid cells</h2><dl class="kv"><dt>Cell side</dt><dd>${fmtKm(ev.cellKm)}</dd><dt>Service radius r</dt><dd>${fmtKm(T.radiusKm)}</dd></dl><p class="why">${esc(ev.text)}</p>`;
+  } else if (ev.kind === 'cell') {
+    const open = ev.status === 'open';
+    h += `<div class="meta">${badge('Cell refreshed', '--planned')}</div><h2>Cell #${ev.cell}: ${open ? esc(siteName(ev.site)) : 'nothing left'}</h2><dl class="kv">`;
+    h += `<dt>Best gain now</dt><dd>${fmtInt.format(ev.gain)} people</dd><dt>Status</dt><dd>${open ? 'in the heap with a fresh entry' : 'empty, no entry'}</dd></dl><p class="why">${esc(ev.text)}</p>`;
+  } else if (ev.kind === 'route') {
+    h += `<div class="meta">${badge('Route changed', '--route')}</div><h2>Route reordered</h2><dl class="kv"><dt>Route now</dt><dd>${fmtKm(ev.routeKm)}</dd></dl><p class="why">${esc(ev.text)}</p>`;
+  } else if (ev.kind === 'result') {
+    const okPop = ev.populationCovered === S.pop, okTowns = ev.townsCovered === S.towns;
+    const okKm = Math.abs(ev.routeKm - S.routeKm) < 1e-2, okStops = ev.stops === S.route.length;
+    const mark = ok => ok ? '<span class="ok">✓ matches</span>' : '<span class="bad">✗ differs</span>';
+    h += `<div class="meta">${badge('Finished', '--accept')}</div><h2>Solver result vs replay</h2><dl class="kv">
+      <dt>Population</dt><dd>${fmtInt.format(ev.populationCovered)} ${mark(okPop)}</dd>
+      <dt>Towns</dt><dd>${ev.townsCovered} ${mark(okTowns)}</dd>
+      <dt>Route</dt><dd>${fmtKm(ev.routeKm)} ${mark(okKm)}</dd>
+      <dt>Stops</dt><dd>${ev.stops} ${mark(okStops)}</dd>
+      <dt>Solver runtime</dt><dd>${fmtInt.format(ev.runtimeMs)} ms (with recording)</dd>
+      <dt>Refilled stops</dt><dd>${S.refilled}</dd>
+      ${Object.entries(ev.stats || {}).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${fmtInt.format(v)}</dd>`).join('')}</dl>
+      <p class="why">The replay rebuilds the route and coverage from the steps alone; matching totals mean the trace is complete.${S.gainMismatches ? ` <span class="bad">${S.gainMismatches} insert steps had a gain that disagrees with their town list.</span>` : ''}</p>`;
+  }
+  card.innerHTML = h;
+}
+
+function logLine(ev) {
+  switch (ev.kind) {
+    case 'phase': return ['--ink', 'Phase: ' + ev.name];
+    case 'note': return ['--muted', ev.text];
+    case 'consider': { const o = OUTCOME[ev.outcome] || OUTCOME.reject; return [o.color, `${o.verb} ${siteName(ev.site)}${ev.addedKm != null ? ' · ' + fmtScore(ev.score) : ''}`]; }
+    case 'insert': return ['--route', `Stop #${S.order[ev.site] || ''} ${siteName(ev.site)} · +${fmtInt.format(ev.gain)}`];
+    case 'route': return ['--route', 'Route reordered · ' + fmtKm(ev.routeKm)];
+    case 'result': return ['--accept', 'Finished'];
+    case 'select': return ['--planned', `Anchor ${S.selOrder[ev.site] || ''} ${siteName(ev.site)} · +${fmtInt.format(ev.gain)} planned`];
+    case 'grid': return ['--planned', `Grid: ${fmtInt.format(ev.cells.length)} cells`];
+    case 'cell': return ['--muted', `Cell #${ev.cell} → ${ev.site == null ? 'empty' : siteName(ev.site) + ' · ' + fmtInt.format(ev.gain)}`];
+  }
+  return ['--muted', ev.kind];
+}
+
+function renderLog() {
+  const rows = [];
+  for (let i = cursor - 1, scanned = 0; i >= 0 && rows.length < 60 && scanned < 20000; i--, scanned++) {
+    const ev = T.events[i];
+    if (!visible(ev)) continue;
+    const [col, text] = logLine(ev);
+    rows.push(`<div data-i="${i + 1}" class="${i === cursor - 1 ? 'cur' : ''}"><span class="n">${fmtInt.format(i + 1)}</span><i class="sw" style="background:var(${col})"></i><span class="t">${esc(text)}</span></div>`);
+  }
+  logEl.innerHTML = rows.join('');
+}
+logEl.addEventListener('click', e => { const row = e.target.closest('[data-i]'); if (row) { pause(); seek(+row.dataset.i); } });
+
+function renderStats() {
+  document.getElementById('sPop').textContent = fmtInt.format(S.pop);
+  document.getElementById('sTowns').innerHTML = `${S.towns} <small>/ ${T.towns.length}</small>`;
+  document.getElementById('sKm').innerHTML = `${fmt1.format(S.routeKm)} <small>/ ${fmt1.format(T.budgetKm)} km</small>`;
+  document.getElementById('sKmBar').style.width = Math.min(100, 100 * S.routeKm / T.budgetKm) + '%';
+  document.getElementById('sStops').textContent = S.route.length;
+  document.getElementById('sDeferred').textContent = fmtInt.format(S.deferredCount);
+  document.getElementById('sAnchors').textContent = fmtInt.format(S.selected);
+  document.getElementById('sPlanned').innerHTML = `${fmtInt.format(S.plannedPop)} <small>${S.plannedTowns} towns</small>`;
+}
+
+let panelQueued = false;
+function onCursorChange() {
+  scrub.value = cursor;
+  document.getElementById('pos').textContent = `${fmtInt.format(cursor)} / ${fmtInt.format(T.events.length)}`;
+  const ev = currentEvent();
+  if (followBox.checked && ev && ev.site != null && ['consider', 'insert', 'select', 'cell'].includes(ev.kind)) {
+    const x = toSX(X.sx[ev.site]), y = toSY(X.sy[ev.site]);
+    const m = Math.min(W, H) * 0.12;
+    if (x < m || y < m || x > W - m || y > H - m) { view.cx = X.sx[ev.site]; view.cy = X.sy[ev.site]; baseDirty = true; }
+  }
+  requestDraw();
+  if (!panelQueued) {
+    panelQueued = true;
+    requestAnimationFrame(() => { panelQueued = false; renderStats(); renderCard(); renderLog(); });
+  }
+}
+
+/* ---------- Playback ---------- */
+const speedEl = document.getElementById('speed');
+const speedLabel = document.getElementById('speedLabel');
+const playBtn = document.getElementById('playBtn');
+const stepsPerSecond = () => 0.5 * Math.pow(10, speedEl.value / 100 * 4);   // 0.5 … 5000
+function updateSpeedLabel() {
+  const v = stepsPerSecond();
+  speedLabel.textContent = (v < 10 ? v.toFixed(1) : fmtInt.format(Math.round(v))) + ' steps/s';
+}
+speedEl.addEventListener('input', updateSpeedLabel);
+updateSpeedLabel();
+
+let lastTime = 0, budget = 0;
+function play() {
+  if (!T || playing) return;
+  if (cursor >= T.events.length) seek(0);
+  playing = true; playBtn.textContent = '❚❚ Pause'; lastTime = performance.now(); budget = 1;
+  requestAnimationFrame(tick);
+}
+function pause() { playing = false; playBtn.textContent = '▶ Play'; }
+function tick(now) {
+  if (!playing) return;
+  budget += (now - lastTime) / 1000 * stepsPerSecond();
+  lastTime = now;
+  const deadline = performance.now() + 12;
+  while (budget >= 1 && playing) {
+    budget -= 1;
+    const target = nextVisibleIndex(cursor);
+    seekQuiet(target);
+    const ev = currentEvent();
+    if (cursor >= T.events.length) pause();
+    else if ((document.getElementById('pauseStop').checked && (ev.kind === 'insert' || ev.kind === 'select'))
+          || (document.getElementById('pausePhase').checked && ev.kind === 'phase')) pause();
+    if (performance.now() > deadline) { budget = Math.min(budget, 1); break; }
+  }
+  onCursorChange();
+  if (playing) requestAnimationFrame(tick);
+}
+function seekQuiet(target) {   // like seek() but without re-rendering; tick renders once per frame
+  while (cursor < target) {
+    apply(T.events[cursor]); cursor++;
+    if (cursor % SNAP === 0 && !snaps[cursor / SNAP]) snaps[cursor / SNAP] = cloneState(S);
+  }
+}
+
+playBtn.onclick = () => playing ? pause() : play();
+document.getElementById('fwdBtn').onclick = () => { if (T) { pause(); seek(nextVisibleIndex(cursor)); } };
+document.getElementById('backBtn').onclick = () => { if (T) { pause(); seek(prevVisibleIndex(cursor)); } };
+document.getElementById('startBtn').onclick = () => { if (T) { pause(); seek(0); } };
+document.getElementById('endBtn').onclick = () => { if (T) { pause(); seek(T.events.length); } };
+document.getElementById('nextStopBtn').onclick = () => { if (T) { pause(); runUntil(isStopEvent); } };
+document.getElementById('nextPhaseBtn').onclick = () => { if (T) { pause(); runUntil(ev => ev.kind === 'phase' || ev.kind === 'result'); } };
+scrub.addEventListener('input', () => { if (T) { pause(); seek(+scrub.value); } });
+detailSel.addEventListener('change', () => { if (T) onCursorChange(); detailSel.blur(); });
+
+document.addEventListener('keydown', e => {
+  if (!T || e.target.matches('input[type=text], select') || e.ctrlKey || e.metaKey || e.altKey) return;
+  const k = e.key;
+  if (k === ' ') { e.preventDefault(); playing ? pause() : play(); }
+  else if (k === 'ArrowRight') { e.preventDefault(); document.getElementById('fwdBtn').click(); }
+  else if (k === 'ArrowLeft') { e.preventDefault(); document.getElementById('backBtn').click(); }
+  else if (k === 'n' || k === 'N') document.getElementById('nextStopBtn').click();
+  else if (k === 'p' || k === 'P') document.getElementById('nextPhaseBtn').click();
+  else if (k === 'Home') document.getElementById('startBtn').click();
+  else if (k === 'End') document.getElementById('endBtn').click();
+  else if (k === ']') { speedEl.value = Math.min(100, +speedEl.value + 5); updateSpeedLabel(); }
+  else if (k === '[') { speedEl.value = Math.max(0, +speedEl.value - 5); updateSpeedLabel(); }
+});
+
+/* ---------- Start ---------- */
+(function start() {
+  const names = window.STEP_TRACE_MANIFEST || [];
+  traceSel.innerHTML = names.length
+    ? names.map(n => `<option value="${esc(n)}">${esc(n)}</option>`).join('')
+    : '<option value="">No traces in traces/</option>';
+  const wanted = new URL(location.href).searchParams.get('trace');
+  const pick = names.includes(wanted) ? wanted : names[0];
+  if (pick) { traceSel.value = pick; loadTraceByName(pick); }
+})();
+</script>
+</body>
+</html>
