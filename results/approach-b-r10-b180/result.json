@@ -1,0 +1,44 @@
+{
+  "runName": "approach-b-r10-b180",
+  "schemaVersion": 1,
+  "algorithm": "Approach B - grid clusters, then route",
+  "scenario": {
+    "serviceRadiusKm": 10.000000,
+    "travelBudgetKm": 180.000000,
+    "maximumTwoOptPasses": 3,
+    "pruneUnreachable": true,
+    "depot": {"latitude": 3.141200, "longitude": 101.686500}
+  },
+  "result": {
+    "populationCovered": 12479851,
+    "townsCovered": 101,
+    "routeLengthKm": 179.045879,
+    "runtimeMillis": 98,
+    "routeStopIds": [4532, 1277, 3272, 505, 498, 8029, 2760, 4447, 11362, 13549]
+  },
+  "statistics": {
+    "cellSideKm": 20.200000,
+    "gridCells": 59,
+    "prunedSites": 8997,
+    "anchorsSelected": 43,
+    "heapPops": 268,
+    "stalePops": 225,
+    "cellRefreshes": 343,
+    "siteEvaluations": 18787,
+    "anchorsSkipped": 33,
+    "refilledStops": 0,
+    "twoOptImprovements": 0
+  },
+  "finalRoute": [
+    {"visitOrder": 1, "candidateStopId": 4532, "geonameId": 1766272, "name": "Kampong Pandan Quarters", "latitude": 3.133330, "longitude": 101.733330, "featureCode": "PPLX"},
+    {"visitOrder": 2, "candidateStopId": 1277, "geonameId": 1744333, "name": "Serdang Lama", "latitude": 3.016670, "longitude": 101.716670, "featureCode": "PPL"},
+    {"visitOrder": 3, "candidateStopId": 3272, "geonameId": 1764449, "name": "Kampung Sesapan Kelubi", "latitude": 2.878900, "longitude": 101.865700, "featureCode": "PPL"},
+    {"visitOrder": 4, "candidateStopId": 505, "geonameId": 1734805, "name": "Salak", "latitude": 2.782540, "longitude": 101.750840, "featureCode": "PPL"},
+    {"visitOrder": 5, "candidateStopId": 498, "geonameId": 1734795, "name": "Kampung Dengkil", "latitude": 2.863300, "longitude": 101.675200, "featureCode": "PPL"},
+    {"visitOrder": 6, "candidateStopId": 8029, "geonameId": 1780824, "name": "Batu Gugup", "latitude": 3.066670, "longitude": 101.566670, "featureCode": "PPL"},
+    {"visitOrder": 7, "candidateStopId": 2760, "geonameId": 1763734, "name": "Kampong Sungai Udang", "latitude": 3.050000, "longitude": 101.416670, "featureCode": "PPL"},
+    {"visitOrder": 8, "candidateStopId": 4447, "geonameId": 1766121, "name": "Kampong Parit Omar", "latitude": 3.266670, "longitude": 101.350000, "featureCode": "PPL"},
+    {"visitOrder": 9, "candidateStopId": 11362, "geonameId": 7795839, "name": "Kampung Melayu Seri Kundang", "latitude": 3.256200, "longitude": 101.527100, "featureCode": "PPL"},
+    {"visitOrder": 10, "candidateStopId": 13549, "geonameId": 12557743, "name": "Kampung Palimbayan", "latitude": 3.172720, "longitude": 101.632590, "featureCode": "PPL"}
+  ]
+}

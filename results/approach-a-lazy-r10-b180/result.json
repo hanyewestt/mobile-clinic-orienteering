@@ -1,16 +1,20 @@
 {
   "runName": "approach-a-lazy-r10-b180",
+  "schemaVersion": 1,
   "algorithm": "Approach A - route-aware lazy greedy",
   "scenario": {
     "serviceRadiusKm": 10.000000,
     "travelBudgetKm": 180.000000,
+    "scoreRefreshMode": "LAZY",
+    "maximumTwoOptPasses": 3,
+    "decisionTraceCaptured": false,
     "depot": {"latitude": 3.141200, "longitude": 101.686500}
   },
   "result": {
     "populationCovered": 12413701,
     "townsCovered": 99,
     "routeLengthKm": 177.479101,
-    "runtimeMillis": 6563,
+    "runtimeMillis": 9978,
     "routeStopIds": [12916, 6935, 13549, 13648, 13464, 13187, 6366, 13789, 13910, 186, 6961, 13885, 2844, 4703, 7339, 6964, 12929, 699, 13849, 1281, 13379, 1218, 13420, 1331, 701]
   },
   "statistics": {
@@ -19,5 +23,34 @@
     "deferredStops": 10673,
     "refilledStops": 0,
     "twoOptImprovements": 0
-  }
+  },
+  "finalRoute": [
+    {"visitOrder": 1, "candidateStopId": 12916, "geonameId": 10177074, "name": "Kuala Lumpur Village", "latitude": 3.154270, "longitude": 101.684860, "featureCode": "PPLX"},
+    {"visitOrder": 2, "candidateStopId": 6935, "geonameId": 1770191, "name": "Kampong Bukit Mati", "latitude": 3.150000, "longitude": 101.666670, "featureCode": "PPL"},
+    {"visitOrder": 3, "candidateStopId": 13549, "geonameId": 12557743, "name": "Kampung Palimbayan", "latitude": 3.172720, "longitude": 101.632590, "featureCode": "PPL"},
+    {"visitOrder": 4, "candidateStopId": 13648, "geonameId": 12625526, "name": "Tropicana Indah", "latitude": 3.141650, "longitude": 101.590890, "featureCode": "PPL"},
+    {"visitOrder": 5, "candidateStopId": 13464, "geonameId": 12547689, "name": "Kampung Matang Pagar", "latitude": 3.242530, "longitude": 101.564230, "featureCode": "PPL"},
+    {"visitOrder": 6, "candidateStopId": 13187, "geonameId": 12523810, "name": "Kampung Dusun Sungai Samak", "latitude": 3.291860, "longitude": 101.588530, "featureCode": "PPL"},
+    {"visitOrder": 7, "candidateStopId": 6366, "geonameId": 1769287, "name": "Kampong Gombak", "latitude": 3.250000, "longitude": 101.550000, "featureCode": "PPL"},
+    {"visitOrder": 8, "candidateStopId": 13789, "geonameId": 12746681, "name": "Kampung Permata Kundang", "latitude": 3.252840, "longitude": 101.514570, "featureCode": "PPL"},
+    {"visitOrder": 9, "candidateStopId": 13910, "geonameId": 13118229, "name": "Bandar Tasik Puteri", "latitude": 3.285310, "longitude": 101.474100, "featureCode": "PPL"},
+    {"visitOrder": 10, "candidateStopId": 186, "geonameId": 1732893, "name": "Batu Arang", "latitude": 3.316670, "longitude": 101.466670, "featureCode": "PPL"},
+    {"visitOrder": 11, "candidateStopId": 6961, "geonameId": 1770222, "name": "Kampong Bukit Kerayong", "latitude": 3.183330, "longitude": 101.400000, "featureCode": "PPL"},
+    {"visitOrder": 12, "candidateStopId": 13885, "geonameId": 13118091, "name": "Setia Alam", "latitude": 3.101550, "longitude": 101.455650, "featureCode": "PPL"},
+    {"visitOrder": 13, "candidateStopId": 2844, "geonameId": 1763834, "name": "Kampong Sungai Rasau", "latitude": 3.050000, "longitude": 101.466670, "featureCode": "PPL"},
+    {"visitOrder": 14, "candidateStopId": 4703, "geonameId": 1766520, "name": "Kampong Padang Jawa", "latitude": 3.050000, "longitude": 101.483330, "featureCode": "PPL"},
+    {"visitOrder": 15, "candidateStopId": 7339, "geonameId": 1770869, "name": "Kampong Batu Lima New Village", "latitude": 2.979760, "longitude": 101.462260, "featureCode": "PPL"},
+    {"visitOrder": 16, "candidateStopId": 6964, "geonameId": 1770226, "name": "Kampung Bukit Kemandul", "latitude": 2.946600, "longitude": 101.538700, "featureCode": "PPL"},
+    {"visitOrder": 17, "candidateStopId": 12929, "geonameId": 11054411, "name": "Bandar Sunway", "latitude": 3.069300, "longitude": 101.607400, "featureCode": "PPLX"},
+    {"visitOrder": 18, "candidateStopId": 699, "geonameId": 1735159, "name": "Sungai Way", "latitude": 3.083330, "longitude": 101.616670, "featureCode": "PPL"},
+    {"visitOrder": 19, "candidateStopId": 13849, "geonameId": 12750575, "name": "Bangsar", "latitude": 3.129450, "longitude": 101.670040, "featureCode": "PPL"},
+    {"visitOrder": 20, "candidateStopId": 1281, "geonameId": 1744508, "name": "Seputeh", "latitude": 3.116670, "longitude": 101.683330, "featureCode": "PPL"},
+    {"visitOrder": 21, "candidateStopId": 13379, "geonameId": 12524435, "name": "Taman Lestari Perdana", "latitude": 2.993780, "longitude": 101.665840, "featureCode": "PPL"},
+    {"visitOrder": 22, "candidateStopId": 1218, "geonameId": 1742822, "name": "Sungai Chua", "latitude": 2.983330, "longitude": 101.766670, "featureCode": "PPL"},
+    {"visitOrder": 23, "candidateStopId": 13420, "geonameId": 12534670, "name": "Taman Bukit Cheras", "latitude": 3.067060, "longitude": 101.748270, "featureCode": "PPL"},
+    {"visitOrder": 24, "candidateStopId": 1331, "geonameId": 1749805, "name": "Pudu", "latitude": 3.133330, "longitude": 101.716670, "featureCode": "PPL"},
+    {"visitOrder": 25, "candidateStopId": 701, "geonameId": 1735161, "name": "Kuala Lumpur", "latitude": 3.141200, "longitude": 101.686530, "featureCode": "PPLC"}
+  ],
+  "decisionTrace": [
+  ]
 }

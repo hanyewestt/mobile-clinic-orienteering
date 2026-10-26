@@ -1,0 +1,55 @@
+{
+  "runName": "approach-b-r5-b300",
+  "schemaVersion": 1,
+  "algorithm": "Approach B - grid clusters, then route",
+  "scenario": {
+    "serviceRadiusKm": 5.000000,
+    "travelBudgetKm": 300.000000,
+    "maximumTwoOptPasses": 3,
+    "pruneUnreachable": true,
+    "depot": {"latitude": 3.141200, "longitude": 101.686500}
+  },
+  "result": {
+    "populationCovered": 11573286,
+    "townsCovered": 91,
+    "routeLengthKm": 299.722426,
+    "runtimeMillis": 537,
+    "routeStopIds": [13924, 695, 4290, 8130, 7653, 13622, 7923, 7900, 2995, 12060, 7988, 12014, 9878, 462, 1693, 5529, 10918, 1332, 1333, 1298, 1281]
+  },
+  "statistics": {
+    "cellSideKm": 10.100000,
+    "gridCells": 213,
+    "prunedSites": 4954,
+    "anchorsSelected": 128,
+    "heapPops": 610,
+    "stalePops": 482,
+    "cellRefreshes": 801,
+    "siteEvaluations": 15931,
+    "anchorsSkipped": 114,
+    "refilledStops": 7,
+    "twoOptImprovements": 1
+  },
+  "finalRoute": [
+    {"visitOrder": 1, "candidateStopId": 13924, "geonameId": 13118277, "name": "Bandar Utama", "latitude": 3.148180, "longitude": 101.614070, "featureCode": "PPL"},
+    {"visitOrder": 2, "candidateStopId": 695, "geonameId": 1735154, "name": "Batu Tiga", "latitude": 3.078000, "longitude": 101.547000, "featureCode": "PPL"},
+    {"visitOrder": 3, "candidateStopId": 4290, "geonameId": 1765918, "name": "Kampong Paya Jaras Dalam", "latitude": 3.183330, "longitude": 101.550000, "featureCode": "PPL"},
+    {"visitOrder": 4, "candidateStopId": 8130, "geonameId": 6547130, "name": "Taman Wahyu", "latitude": 3.211050, "longitude": 101.670720, "featureCode": "PPL"},
+    {"visitOrder": 5, "candidateStopId": 7653, "geonameId": 1771357, "name": "Kampong Baharu", "latitude": 3.166670, "longitude": 101.716670, "featureCode": "PPLX"},
+    {"visitOrder": 6, "candidateStopId": 13622, "geonameId": 12607224, "name": "Taman Cheras Jaya Peringkat 1", "latitude": 3.027590, "longitude": 101.761070, "featureCode": "PPL"},
+    {"visitOrder": 7, "candidateStopId": 7923, "geonameId": 1773271, "name": "Jalan Bangi", "latitude": 2.916670, "longitude": 101.816670, "featureCode": "PPL"},
+    {"visitOrder": 8, "candidateStopId": 7900, "geonameId": 1771741, "name": "Kampung Abok", "latitude": 2.702400, "longitude": 101.949900, "featureCode": "PPL"},
+    {"visitOrder": 9, "candidateStopId": 2995, "geonameId": 1764020, "name": "Kampong Sungai Ibor", "latitude": 2.583330, "longitude": 102.050000, "featureCode": "PPL"},
+    {"visitOrder": 10, "candidateStopId": 12060, "geonameId": 7797940, "name": "Taman Asean", "latitude": 2.235600, "longitude": 102.220900, "featureCode": "PPL"},
+    {"visitOrder": 11, "candidateStopId": 7988, "geonameId": 1778290, "name": "Bukit Rambai", "latitude": 2.259400, "longitude": 102.183800, "featureCode": "PPL"},
+    {"visitOrder": 12, "candidateStopId": 12014, "geonameId": 7797795, "name": "Kampung Pulau Belapan", "latitude": 2.360800, "longitude": 102.076500, "featureCode": "PPL"},
+    {"visitOrder": 13, "candidateStopId": 9878, "geonameId": 7567399, "name": "Kampung Sungai Dua", "latitude": 2.432600, "longitude": 102.037300, "featureCode": "PPL"},
+    {"visitOrder": 14, "candidateStopId": 462, "geonameId": 1734730, "name": "Pengkalan", "latitude": 2.450000, "longitude": 102.033330, "featureCode": "PPL"},
+    {"visitOrder": 15, "candidateStopId": 1693, "geonameId": 1762302, "name": "Kampung Ulu Soggoh", "latitude": 2.604100, "longitude": 101.892090, "featureCode": "PPL"},
+    {"visitOrder": 16, "candidateStopId": 5529, "geonameId": 1767911, "name": "Kampung Kubang", "latitude": 2.791300, "longitude": 101.768300, "featureCode": "PPL"},
+    {"visitOrder": 17, "candidateStopId": 10918, "geonameId": 7697678, "name": "Ladang Low Ti Kok", "latitude": 2.936500, "longitude": 101.667000, "featureCode": "PPL"},
+    {"visitOrder": 18, "candidateStopId": 1332, "geonameId": 1749822, "name": "Puchong", "latitude": 3.000000, "longitude": 101.616670, "featureCode": "PPL"},
+    {"visitOrder": 19, "candidateStopId": 1333, "geonameId": 1749825, "name": "Puchong Batu Dua Belas", "latitude": 3.016670, "longitude": 101.616670, "featureCode": "PPL"},
+    {"visitOrder": 20, "candidateStopId": 1298, "geonameId": 1747011, "name": "Salak South New Village", "latitude": 3.083330, "longitude": 101.700000, "featureCode": "PPL"},
+    {"visitOrder": 21, "candidateStopId": 1281, "geonameId": 1744508, "name": "Seputeh", "latitude": 3.116670, "longitude": 101.683330, "featureCode": "PPL"}
+  ]
+}

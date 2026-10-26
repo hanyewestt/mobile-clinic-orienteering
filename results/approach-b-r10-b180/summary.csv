@@ -1,0 +1,2 @@
+run_name,algorithm,service_radius_km,travel_budget_km,population_covered,towns_covered,route_length_km,selected_stops,runtime_ms,cell_side_km,grid_cells,pruned_sites,anchors_selected,heap_pops,stale_pops,cell_refreshes,site_evaluations,anchors_skipped,refilled_stops,two_opt_improvements
+"approach-b-r10-b180","Approach B - grid clusters, then route",10.000000,180.000000,12479851,101,179.045879,10,98,20.200000,59,8997,43,268,225,343,18787,33,0,0

@@ -1,6 +1,7 @@
 package experiments;
 
 import algorithms.DecisionTrace;
+import algorithms.GridClusterResult;
 import algorithms.NewlyServedTown;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -10,6 +11,7 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.Locale;
 import model.CandidateStop;
+import model.ProblemInstance;
 import model.Route;
 import model.RunResult;
 
@@ -23,6 +25,94 @@ public final class ResultsWriter {
         writeSummaryCsv(outcome);
         writeRouteCsv(outcome);
         writeJson(outcome);
+    }
+
+    /**
+     * Writes the same three files as Approach A. The first nine summary
+     * columns and the "result" and "finalRoute" JSON sections are identical
+     * in both approaches; only the algorithm-specific counters differ.
+     */
+    public static void writeApproachB(ApproachBOutcome outcome) throws IOException {
+        Path outputDirectory = outcome.config().outputDirectory();
+        Files.createDirectories(outputDirectory);
+        GridClusterResult detail = outcome.approachBResult();
+        RunResult result = detail.runResult();
+
+        try (BufferedWriter writer = Files.newBufferedWriter(
+                outputDirectory.resolve("summary.csv"), StandardCharsets.UTF_8)) {
+            writer.write("run_name,algorithm,service_radius_km,travel_budget_km,population_covered,"
+                    + "towns_covered,route_length_km,selected_stops,runtime_ms,cell_side_km,grid_cells,"
+                    + "pruned_sites,anchors_selected,heap_pops,stale_pops,cell_refreshes,site_evaluations,"
+                    + "anchors_skipped,refilled_stops,two_opt_improvements\n");
+            writer.write(csv(outcome.config().runName()));
+            writer.write(',' + csv(result.algorithmName()));
+            writer.write(',' + decimal(outcome.config().serviceRadiusKm()));
+            writer.write(',' + decimal(outcome.config().travelBudgetKm()));
+            writer.write(',' + Long.toString(result.populationCovered()));
+            writer.write(',' + Integer.toString(result.townsCovered()));
+            writer.write(',' + decimal(result.route().totalDistanceKm()));
+            writer.write(',' + Integer.toString(result.route().stopIds().size()));
+            writer.write(',' + Long.toString(result.runtimeMillis()));
+            writer.write(',' + decimal(detail.cellSideKm()));
+            writer.write(',' + Integer.toString(detail.nonEmptyCells()));
+            writer.write(',' + Integer.toString(detail.prunedSites()));
+            writer.write(',' + Integer.toString(detail.anchorsSelected()));
+            writer.write(',' + Long.toString(detail.heapPops()));
+            writer.write(',' + Long.toString(detail.stalePops()));
+            writer.write(',' + Long.toString(detail.cellRefreshes()));
+            writer.write(',' + Long.toString(detail.siteEvaluations()));
+            writer.write(',' + Integer.toString(detail.anchorsSkipped()));
+            writer.write(',' + Integer.toString(detail.refilledStops()));
+            writer.write(',' + Integer.toString(detail.twoOptImprovements()));
+            writer.newLine();
+        }
+
+        writeRouteCsv(outputDirectory, outcome.instance(), result.route());
+
+        try (BufferedWriter writer = Files.newBufferedWriter(
+                outputDirectory.resolve("result.json"), StandardCharsets.UTF_8)) {
+            writer.write("{\n");
+            writer.write("  \"runName\": \"" + json(outcome.config().runName()) + "\",\n");
+            writer.write("  \"schemaVersion\": 1,\n");
+            writer.write("  \"algorithm\": \"" + json(result.algorithmName()) + "\",\n");
+            writer.write("  \"scenario\": {\n");
+            writer.write("    \"serviceRadiusKm\": " + decimal(outcome.config().serviceRadiusKm()) + ",\n");
+            writer.write("    \"travelBudgetKm\": " + decimal(outcome.config().travelBudgetKm()) + ",\n");
+            writer.write("    \"maximumTwoOptPasses\": " + outcome.config().maximumTwoOptPasses() + ",\n");
+            writer.write("    \"pruneUnreachable\": " + outcome.config().pruneUnreachable() + ",\n");
+            writer.write("    \"depot\": {\"latitude\": " + decimal(outcome.instance().depot().latitude())
+                    + ", \"longitude\": " + decimal(outcome.instance().depot().longitude()) + "}\n");
+            writer.write("  },\n");
+            writer.write("  \"result\": {\n");
+            writer.write("    \"populationCovered\": " + result.populationCovered() + ",\n");
+            writer.write("    \"townsCovered\": " + result.townsCovered() + ",\n");
+            writer.write("    \"routeLengthKm\": " + decimal(result.route().totalDistanceKm()) + ",\n");
+            writer.write("    \"runtimeMillis\": " + result.runtimeMillis() + ",\n");
+            writer.write("    \"routeStopIds\": [");
+            for (int index = 0; index < result.route().stopIds().size(); index++) {
+                if (index > 0) {
+                    writer.write(", ");
+                }
+                writer.write(Integer.toString(result.route().stopIds().get(index)));
+            }
+            writer.write("]\n");
+            writer.write("  },\n");
+            writer.write("  \"statistics\": {\n");
+            writer.write("    \"cellSideKm\": " + decimal(detail.cellSideKm()) + ",\n");
+            writer.write("    \"gridCells\": " + detail.nonEmptyCells() + ",\n");
+            writer.write("    \"prunedSites\": " + detail.prunedSites() + ",\n");
+            writer.write("    \"anchorsSelected\": " + detail.anchorsSelected() + ",\n");
+            writer.write("    \"heapPops\": " + detail.heapPops() + ",\n");
+            writer.write("    \"stalePops\": " + detail.stalePops() + ",\n");
+            writer.write("    \"cellRefreshes\": " + detail.cellRefreshes() + ",\n");
+            writer.write("    \"siteEvaluations\": " + detail.siteEvaluations() + ",\n");
+            writer.write("    \"anchorsSkipped\": " + detail.anchorsSkipped() + ",\n");
+            writer.write("    \"refilledStops\": " + detail.refilledStops() + ",\n");
+            writer.write("    \"twoOptImprovements\": " + detail.twoOptImprovements() + "\n");
+            writer.write("  },\n");
+            writeFinalRoute(writer, outcome.instance(), result.route());
+            writer.write("\n}\n");
+        }
     }
 
     private static void writeSummaryCsv(ExperimentOutcome outcome) throws IOException {
@@ -51,12 +141,15 @@ public final class ResultsWriter {
     }
 
     private static void writeRouteCsv(ExperimentOutcome outcome) throws IOException {
-        Path path = outcome.config().outputDirectory().resolve("route-stops.csv");
-        Route route = outcome.approachAResult().runResult().route();
+        writeRouteCsv(outcome.config().outputDirectory(), outcome.instance(), outcome.approachAResult().runResult().route());
+    }
+
+    private static void writeRouteCsv(Path outputDirectory, ProblemInstance instance, Route route) throws IOException {
+        Path path = outputDirectory.resolve("route-stops.csv");
         try (BufferedWriter writer = Files.newBufferedWriter(path, StandardCharsets.UTF_8)) {
             writer.write("visit_order,candidate_id,geoname_id,name,latitude,longitude,feature_code\n");
             for (int visitOrder = 0; visitOrder < route.stopIds().size(); visitOrder++) {
-                CandidateStop stop = outcome.instance().candidateStops().get(route.stopIds().get(visitOrder));
+                CandidateStop stop = instance.candidateStops().get(route.stopIds().get(visitOrder));
                 writer.write(Integer.toString(visitOrder + 1));
                 writer.write(',' + Integer.toString(stop.id()));
                 writer.write(',' + Long.toString(stop.geonameId()));
@@ -116,10 +209,14 @@ public final class ResultsWriter {
     }
 
     private static void writeFinalRoute(BufferedWriter writer, ExperimentOutcome outcome) throws IOException {
+        writeFinalRoute(writer, outcome.instance(), outcome.approachAResult().runResult().route());
+    }
+
+    private static void writeFinalRoute(BufferedWriter writer, ProblemInstance instance, Route route) throws IOException {
         writer.write("  \"finalRoute\": [\n");
-        List<Integer> stopIds = outcome.approachAResult().runResult().route().stopIds();
+        List<Integer> stopIds = route.stopIds();
         for (int index = 0; index < stopIds.size(); index++) {
-            CandidateStop stop = outcome.instance().candidateStops().get(stopIds.get(index));
+            CandidateStop stop = instance.candidateStops().get(stopIds.get(index));
             writer.write("    {\"visitOrder\": " + (index + 1)
                     + ", \"candidateStopId\": " + stop.id()
                     + ", \"geonameId\": " + stop.geonameId()
