@@ -78,6 +78,7 @@ Both approaches must use this shared code for a fair comparison.
 Contains the solvers only. `RoutingSolver` is the common interface;
 `LazyGreedySolver` implements Approach A in lazy and full-recompute modes and
 returns `ApproachAResult` statistics for the comparison experiment.
+`GridClusterSolver` implements Approach B (one coverage anchor per `2r` grid cell, then shared routing) and returns `ApproachBResult` statistics.
 `HeldKarpSolver` is an exact baseline restricted to small, hand-checkable
 instances of at most 15 candidate stops.
 

@@ -48,6 +48,11 @@ Build the project in this order. Finish and test each step before moving to the 
    - Use a hash grid with cells of side `2r`.
    - Select coverage anchors locally, then insert them into a route using the
      shared routing tools.
+   - Run one Approach B scenario from the project root:
+
+     ```bash
+     java -cp out Main data/processed results/approach-b-r10-b180 10 180 B
+     ```
 
 8. **Add a small exact baseline and tests**
    - Use Held-Karp only on a tiny 10-15-site instance.

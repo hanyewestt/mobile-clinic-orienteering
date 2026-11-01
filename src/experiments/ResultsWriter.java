@@ -25,6 +25,55 @@ public final class ResultsWriter {
         writeJson(outcome);
     }
 
+    public static void writeApproachB(
+            ExperimentConfig config, model.ProblemInstance instance, algorithms.ApproachBResult result)
+            throws IOException {
+        Files.createDirectories(config.outputDirectory());
+        RunResult run = result.runResult();
+        try (BufferedWriter writer = Files.newBufferedWriter(
+                config.outputDirectory().resolve("summary.csv"), StandardCharsets.UTF_8)) {
+            writer.write("run_name,algorithm,service_radius_km,travel_budget_km,population_covered,"
+                    + "towns_covered,route_length_km,selected_stops,runtime_ms,cell_side_km,"
+                    + "non_empty_cells,anchors_selected,cell_recomputations,heap_pops,stale_entries,"
+                    + "skipped_anchors,refilled_stops,two_opt_improvements\n");
+            writer.write(csv(config.runName()));
+            writer.write(',' + csv(run.algorithmName()));
+            writer.write(',' + decimal(config.serviceRadiusKm()));
+            writer.write(',' + decimal(config.travelBudgetKm()));
+            writer.write(',' + Long.toString(run.populationCovered()));
+            writer.write(',' + Integer.toString(run.townsCovered()));
+            writer.write(',' + decimal(run.route().totalDistanceKm()));
+            writer.write(',' + Integer.toString(run.route().stopIds().size()));
+            writer.write(',' + Long.toString(run.runtimeMillis()));
+            writer.write(',' + decimal(result.cellSideKm()));
+            writer.write(',' + Integer.toString(result.nonEmptyCells()));
+            writer.write(',' + Integer.toString(result.anchorsSelected()));
+            writer.write(',' + Long.toString(result.cellRecomputations()));
+            writer.write(',' + Long.toString(result.heapPops()));
+            writer.write(',' + Long.toString(result.staleEntries()));
+            writer.write(',' + Integer.toString(result.skippedAnchors()));
+            writer.write(',' + Integer.toString(result.refilledStops()));
+            writer.write(',' + Integer.toString(result.twoOptImprovements()));
+            writer.newLine();
+        }
+        try (BufferedWriter writer = Files.newBufferedWriter(
+                config.outputDirectory().resolve("route-stops.csv"), StandardCharsets.UTF_8)) {
+            writer.write("visit_order,candidate_id,geoname_id,name,latitude,longitude,feature_code\n");
+            List<Integer> stopIds = run.route().stopIds();
+            for (int visitOrder = 0; visitOrder < stopIds.size(); visitOrder++) {
+                CandidateStop stop = instance.candidateStops().get(stopIds.get(visitOrder));
+                writer.write(Integer.toString(visitOrder + 1));
+                writer.write(',' + Integer.toString(stop.id()));
+                writer.write(',' + Long.toString(stop.geonameId()));
+                writer.write(',' + csv(stop.name()));
+                writer.write(',' + decimal(stop.coordinate().latitude()));
+                writer.write(',' + decimal(stop.coordinate().longitude()));
+                writer.write(',' + csv(stop.featureCode()));
+                writer.newLine();
+            }
+        }
+    }
+
     private static void writeSummaryCsv(ExperimentOutcome outcome) throws IOException {
         RunResult result = outcome.approachAResult().runResult();
         Path path = outcome.config().outputDirectory().resolve("summary.csv");
