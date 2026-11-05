@@ -1,0 +1,40 @@
+{
+  "runName": "approach-b-r25-b400",
+  "schemaVersion": 1,
+  "algorithm": "Approach B - grid clusters, then route",
+  "scenario": {
+    "serviceRadiusKm": 25.000000,
+    "travelBudgetKm": 400.000000,
+    "maximumTwoOptPasses": 3,
+    "pruneUnreachable": true,
+    "depot": {"latitude": 3.141200, "longitude": 101.686500}
+  },
+  "result": {
+    "populationCovered": 15403279,
+    "townsCovered": 171,
+    "routeLengthKm": 397.915131,
+    "runtimeMillis": 93,
+    "routeStopIds": [468, 6870, 5397, 698, 184, 5618]
+  },
+  "statistics": {
+    "cellSideKm": 50.500000,
+    "gridCells": 37,
+    "prunedSites": 6932,
+    "anchorsSelected": 38,
+    "heapPops": 243,
+    "stalePops": 205,
+    "cellRefreshes": 283,
+    "siteEvaluations": 71574,
+    "anchorsSkipped": 32,
+    "refilledStops": 0,
+    "twoOptImprovements": 0
+  },
+  "finalRoute": [
+    {"visitOrder": 1, "candidateStopId": 468, "geonameId": 1734738, "name": "Tampin", "latitude": 2.470100, "longitude": 102.230200, "featureCode": "PPL"},
+    {"visitOrder": 2, "candidateStopId": 6870, "geonameId": 1770111, "name": "Kampung Bukit Serkam", "latitude": 2.146400, "longitude": 102.381600, "featureCode": "PPL"},
+    {"visitOrder": 3, "candidateStopId": 5397, "geonameId": 1767702, "name": "Kampung Labu Ulu", "latitude": 2.743600, "longitude": 101.844200, "featureCode": "PPL"},
+    {"visitOrder": 4, "candidateStopId": 698, "geonameId": 1735158, "name": "Petaling Jaya", "latitude": 3.107260, "longitude": 101.606710, "featureCode": "PPLA2"},
+    {"visitOrder": 5, "candidateStopId": 184, "geonameId": 1732891, "name": "Kuala Selangor", "latitude": 3.350000, "longitude": 101.250000, "featureCode": "PPL"},
+    {"visitOrder": 6, "candidateStopId": 5618, "geonameId": 1768034, "name": "Kampung Kuala Kerling", "latitude": 3.476410, "longitude": 101.555070, "featureCode": "PPL"}
+  ]
+}

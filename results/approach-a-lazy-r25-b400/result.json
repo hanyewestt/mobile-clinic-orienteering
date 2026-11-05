@@ -1,0 +1,58 @@
+{
+  "runName": "approach-a-lazy-r25-b400",
+  "schemaVersion": 1,
+  "algorithm": "Approach A - route-aware lazy greedy",
+  "scenario": {
+    "serviceRadiusKm": 25.000000,
+    "travelBudgetKm": 400.000000,
+    "scoreRefreshMode": "LAZY",
+    "maximumTwoOptPasses": 3,
+    "decisionTraceCaptured": false,
+    "depot": {"latitude": 3.141200, "longitude": 101.686500}
+  },
+  "result": {
+    "populationCovered": 15616662,
+    "townsCovered": 185,
+    "routeLengthKm": 398.912163,
+    "runtimeMillis": 15622,
+    "routeStopIds": [13848, 13752, 11352, 186, 6950, 13565, 13567, 13777, 697, 12899, 13361, 2961, 5397, 7659, 12000, 1227, 6870, 3106, 12872, 6460, 1708, 1765, 2926, 6176, 5104, 1344, 701]
+  },
+  "statistics": {
+    "candidateEvaluations": 39466,
+    "heapPops": 15777,
+    "deferredStops": 11845,
+    "refilledStops": 1,
+    "twoOptImprovements": 1
+  },
+  "finalRoute": [
+    {"visitOrder": 1, "candidateStopId": 13848, "geonameId": 12750574, "name": "Taman Tun Dr Ismail", "latitude": 3.145060, "longitude": 101.626170, "featureCode": "PPL"},
+    {"visitOrder": 2, "candidateStopId": 13752, "geonameId": 12689554, "name": "Taman Intan Baiduri", "latitude": 3.231490, "longitude": 101.647380, "featureCode": "PPL"},
+    {"visitOrder": 3, "candidateStopId": 11352, "geonameId": 7795821, "name": "Kampung Stesen", "latitude": 3.355500, "longitude": 101.579100, "featureCode": "PPL"},
+    {"visitOrder": 4, "candidateStopId": 186, "geonameId": 1732893, "name": "Batu Arang", "latitude": 3.316670, "longitude": 101.466670, "featureCode": "PPL"},
+    {"visitOrder": 5, "candidateStopId": 6950, "geonameId": 1770211, "name": "Kampong Bukit Kuching", "latitude": 3.266670, "longitude": 101.333330, "featureCode": "PPL"},
+    {"visitOrder": 6, "candidateStopId": 13565, "geonameId": 12572153, "name": "Kampung Melayu Subang", "latitude": 3.162040, "longitude": 101.532110, "featureCode": "PPL"},
+    {"visitOrder": 7, "candidateStopId": 13567, "geonameId": 12572155, "name": "Kampung Sungai Perdana", "latitude": 3.151030, "longitude": 101.549950, "featureCode": "PPL"},
+    {"visitOrder": 8, "candidateStopId": 13777, "geonameId": 12746669, "name": "Taman Bukit Mayang Emas", "latitude": 3.125650, "longitude": 101.596900, "featureCode": "PPL"},
+    {"visitOrder": 9, "candidateStopId": 697, "geonameId": 1735157, "name": "Petaling", "latitude": 3.083330, "longitude": 101.666670, "featureCode": "PPL"},
+    {"visitOrder": 10, "candidateStopId": 12899, "geonameId": 8604644, "name": "Bandar Puchong Jaya", "latitude": 3.051210, "longitude": 101.621990, "featureCode": "PPL"},
+    {"visitOrder": 11, "candidateStopId": 13361, "geonameId": 12524231, "name": "Sierra 11", "latitude": 2.971680, "longitude": 101.659910, "featureCode": "PPLX"},
+    {"visitOrder": 12, "candidateStopId": 2961, "geonameId": 1763979, "name": "Kampung Sungai Kembong Hilir", "latitude": 2.889500, "longitude": 101.807700, "featureCode": "PPL"},
+    {"visitOrder": 13, "candidateStopId": 5397, "geonameId": 1767702, "name": "Kampung Labu Ulu", "latitude": 2.743600, "longitude": 101.844200, "featureCode": "PPL"},
+    {"visitOrder": 14, "candidateStopId": 7659, "geonameId": 1771363, "name": "Kampung Baharu", "latitude": 2.578500, "longitude": 101.970200, "featureCode": "PPL"},
+    {"visitOrder": 15, "candidateStopId": 12000, "geonameId": 7797742, "name": "Pegon Dalam", "latitude": 2.403000, "longitude": 102.212300, "featureCode": "PPL"},
+    {"visitOrder": 16, "candidateStopId": 1227, "geonameId": 1743180, "name": "Solok Pegoh", "latitude": 2.400000, "longitude": 102.216670, "featureCode": "PPL"},
+    {"visitOrder": 17, "candidateStopId": 6870, "geonameId": 1770111, "name": "Kampung Bukit Serkam", "latitude": 2.146400, "longitude": 102.381600, "featureCode": "PPL"},
+    {"visitOrder": 18, "candidateStopId": 3106, "geonameId": 1764152, "name": "Kampung Sungai Ayer Tawar", "latitude": 2.137900, "longitude": 102.451400, "featureCode": "PPL"},
+    {"visitOrder": 19, "candidateStopId": 12872, "geonameId": 8536927, "name": "Merlimau Pasir", "latitude": 2.146900, "longitude": 102.443500, "featureCode": "PPL"},
+    {"visitOrder": 20, "candidateStopId": 6460, "geonameId": 1769446, "name": "Kampung Gapam", "latitude": 2.272200, "longitude": 102.331000, "featureCode": "PPL"},
+    {"visitOrder": 21, "candidateStopId": 1708, "geonameId": 1762318, "name": "Kampung Ulu Pegoh", "latitude": 2.418300, "longitude": 102.214200, "featureCode": "PPL"},
+    {"visitOrder": 22, "candidateStopId": 1765, "geonameId": 1762385, "name": "Kampung Ulu Bendol", "latitude": 2.731600, "longitude": 102.088500, "featureCode": "PPL"},
+    {"visitOrder": 23, "candidateStopId": 2926, "geonameId": 1763934, "name": "Kampung Sungai Machang Hilir", "latitude": 2.862300, "longitude": 101.906400, "featureCode": "PPL"},
+    {"visitOrder": 24, "candidateStopId": 6176, "geonameId": 1768962, "name": "Kampung Jalan Enam Kaki", "latitude": 2.871200, "longitude": 101.855600, "featureCode": "PPL"},
+    {"visitOrder": 25, "candidateStopId": 5104, "geonameId": 1767243, "name": "Kampung Lubok Tebong", "latitude": 2.873370, "longitude": 101.856100, "featureCode": "PPL"},
+    {"visitOrder": 26, "candidateStopId": 1344, "geonameId": 1750327, "name": "Petaling Lama", "latitude": 3.100000, "longitude": 101.683330, "featureCode": "PPLX"},
+    {"visitOrder": 27, "candidateStopId": 701, "geonameId": 1735161, "name": "Kuala Lumpur", "latitude": 3.141200, "longitude": 101.686530, "featureCode": "PPLC"}
+  ],
+  "decisionTrace": [
+  ]
+}

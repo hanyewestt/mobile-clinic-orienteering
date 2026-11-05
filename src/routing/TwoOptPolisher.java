@@ -16,11 +16,26 @@ public final class TwoOptPolisher {
     private TwoOptPolisher() {
     }
 
+    /** Observes each applied 2-opt move; used for step traces only. */
+    @FunctionalInterface
+    public interface SwapListener {
+        void onSwap(List<Integer> stopIdsAfterSwap, int first, int second, double changeKm, double lengthKm);
+    }
+
     public static TwoOptResult polish(
             Route initialRoute,
             Coordinate depot,
             List<CandidateStop> candidateStops,
             int maximumPasses) {
+        return polish(initialRoute, depot, candidateStops, maximumPasses, null);
+    }
+
+    public static TwoOptResult polish(
+            Route initialRoute,
+            Coordinate depot,
+            List<CandidateStop> candidateStops,
+            int maximumPasses,
+            SwapListener swapListener) {
         Objects.requireNonNull(initialRoute, "initialRoute");
         Objects.requireNonNull(depot, "depot");
         if (maximumPasses < 0) {
@@ -43,6 +58,9 @@ public final class TwoOptPolisher {
                         Collections.reverse(stopIds.subList(first, second + 1));
                         currentLengthKm += changeKm;
                         improvements++;
+                        if (swapListener != null) {
+                            swapListener.onSwap(List.copyOf(stopIds), first, second, changeKm, currentLengthKm);
+                        }
                         improvedThisPass = true;
                         break;
                     }

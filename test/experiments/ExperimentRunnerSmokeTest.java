@@ -16,7 +16,7 @@ import model.Coordinate;
 import model.DemandTown;
 import model.ProblemInstance;
 
-/** Checks that one small Approach A run writes every expected result artifact. */
+/** Checks that small Approach A and B runs write every expected result artifact. */
 public final class ExperimentRunnerSmokeTest {
     private ExperimentRunnerSmokeTest() {
     }
@@ -53,6 +53,23 @@ public final class ExperimentRunnerSmokeTest {
                 "The JSON result should contain the covered population.");
         check(Files.readString(outputDirectory.resolve("result.json")).contains("\"decisionTrace\":"),
                 "A traced experiment must export its decision trace.");
+
+        Path approachBDirectory = Files.createTempDirectory("mobile-clinic-experiment-b-");
+        ApproachBOutcome approachB = ExperimentRunner.runApproachB(
+                instance, new ApproachBConfig("smoke-run-b", 10.0, 50.0, 3, true, approachBDirectory));
+        check(approachB.approachBResult().runResult().populationCovered() == 700,
+                "Approach B should also cover 700 people.");
+        for (String file : List.of("summary.csv", "route-stops.csv", "result.json")) {
+            check(Files.isRegularFile(approachBDirectory.resolve(file)), "Approach B must write " + file + ".");
+        }
+        String approachAHeader = Files.readAllLines(outputDirectory.resolve("summary.csv")).get(0);
+        String approachBHeader = Files.readAllLines(approachBDirectory.resolve("summary.csv")).get(0);
+        String sharedColumns = "run_name,algorithm,service_radius_km,travel_budget_km,population_covered,"
+                + "towns_covered,route_length_km,selected_stops,runtime_ms,";
+        check(approachAHeader.startsWith(sharedColumns) && approachBHeader.startsWith(sharedColumns),
+                "Both approaches must share the first nine summary columns.");
+        check(Files.readString(approachBDirectory.resolve("result.json")).contains("\"populationCovered\": 700"),
+                "Approach B's JSON result should contain the covered population.");
 
         System.out.println("Experiment runner smoke test passed.");
     }
