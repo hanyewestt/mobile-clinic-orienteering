@@ -72,8 +72,8 @@ public final class LazyGreedySolverSmokeTest {
                 mode + " mode should select two affordable stops.");
         check(result.runResult().route().totalDistanceKm() <= 50.0,
                 mode + " mode must stay within budget.");
-        check(result.deferredStops() == 1,
-                mode + " mode should defer the far stop.");
+        check(result.deferredStops() == 0,
+                mode + " mode should prune the far stop, not defer it.");
     }
 
     private static void check(boolean condition, String message) {

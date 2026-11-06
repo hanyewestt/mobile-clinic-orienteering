@@ -25,8 +25,8 @@ public final class ProcessedInstanceLoaderSmokeTest {
 
         check(instance.candidateStops().size() == 14_034, "Expected 14,034 candidate stops.");
         check(instance.demandTowns().size() == 636, "Expected 636 demand towns.");
-        check(instance.candidateStops().getFirst().id() == 0, "Candidate ids should start at zero.");
-        check(instance.demandTowns().getFirst().id() == 0, "Demand-town ids should start at zero.");
+        check(instance.candidateStops().get(0).id() == 0, "Candidate ids should start at zero.");
+        check(instance.demandTowns().get(0).id() == 0, "Demand-town ids should start at zero.");
 
         System.out.println("Processed instance loader smoke test passed.");
     }

@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import model.Coordinate;
 import model.ProblemInstance;
+import routing.TwoOptPolisher;
 import trace.StepRecorder;
 
 /** Runs and exports reproducible Approach A and Approach B experiments. */
@@ -99,7 +100,8 @@ public final class ExperimentRunner {
             }
             String runName = args.length >= 6 ? args[5]
                     : "approach-b-r" + trimDecimal(radiusKm) + "-b" + trimDecimal(budgetKm);
-            ApproachBConfig config = new ApproachBConfig(runName, radiusKm, budgetKm, 3, true, Path.of(args[1]));
+            ApproachBConfig config = new ApproachBConfig(
+                    runName, radiusKm, budgetKm, TwoOptPolisher.NO_PASS_LIMIT, true, Path.of(args[1]));
             ApproachBOutcome outcome = runApproachBFromProcessedData(Path.of(args[0]), config);
             System.out.println("Experiment complete: " + outcome.config().outputDirectory());
             System.out.println("Population covered: " + outcome.approachBResult().runResult().populationCovered());
@@ -114,7 +116,7 @@ public final class ExperimentRunner {
                 radiusKm,
                 budgetKm,
                 mode,
-                3,
+                TwoOptPolisher.NO_PASS_LIMIT,
                 Path.of(args[1]),
                 trace);
         ExperimentOutcome outcome = runApproachAFromProcessedData(Path.of(args[0]), config);

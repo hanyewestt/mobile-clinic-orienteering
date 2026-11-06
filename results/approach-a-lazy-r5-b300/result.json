@@ -6,23 +6,23 @@
     "serviceRadiusKm": 5.000000,
     "travelBudgetKm": 300.000000,
     "scoreRefreshMode": "LAZY",
-    "maximumTwoOptPasses": 3,
+    "maximumTwoOptPasses": 2147483647,
     "decisionTraceCaptured": false,
     "depot": {"latitude": 3.141200, "longitude": 101.686500}
   },
   "result": {
-    "populationCovered": 12645862,
-    "townsCovered": 100,
-    "routeLengthKm": 297.156263,
-    "runtimeMillis": 14610,
-    "routeStopIds": [13914, 2911, 13691, 8130, 6944, 13662, 13907, 11361, 11368, 13180, 11353, 12817, 13910, 1476, 13568, 4865, 13885, 7410, 2217, 2285, 6136, 13571, 13924, 13911, 11077, 13926, 7300, 1333, 13369, 10915, 13622, 7010, 7923, 7084, 7900, 6017, 2926, 10787, 10771, 8031, 4533, 701]
+    "populationCovered": 12751189,
+    "townsCovered": 102,
+    "routeLengthKm": 296.355778,
+    "runtimeMillis": 247,
+    "routeStopIds": [13914, 2911, 13691, 8130, 6944, 13662, 13907, 11361, 11368, 13180, 11353, 12817, 13910, 1476, 13568, 4865, 13885, 7410, 2217, 2285, 6136, 13571, 13924, 13911, 11077, 13926, 7300, 1333, 13369, 10915, 8140, 7923, 7084, 13851, 7900, 6017, 2926, 10787, 13622, 7010, 10771, 8031, 4533, 701]
   },
   "statistics": {
-    "candidateEvaluations": 21553,
-    "heapPops": 7738,
-    "deferredStops": 6908,
-    "refilledStops": 1,
-    "twoOptImprovements": 3
+    "candidateEvaluations": 10594,
+    "heapPops": 2784,
+    "deferredStops": 1954,
+    "refilledStops": 3,
+    "twoOptImprovements": 6
   },
   "finalRoute": [
     {"visitOrder": 1, "candidateStopId": 13914, "geonameId": 13118233, "name": "Titiwangsa", "latitude": 3.178220, "longitude": 101.703120, "featureCode": "PPL"},
@@ -55,18 +55,20 @@
     {"visitOrder": 28, "candidateStopId": 1333, "geonameId": 1749825, "name": "Puchong Batu Dua Belas", "latitude": 3.016670, "longitude": 101.616670, "featureCode": "PPL"},
     {"visitOrder": 29, "candidateStopId": 13369, "geonameId": 12524248, "name": "Taman Lestari Putra 4", "latitude": 3.002470, "longitude": 101.656330, "featureCode": "PPLX"},
     {"visitOrder": 30, "candidateStopId": 10915, "geonameId": 7697635, "name": "Ladang Madingley", "latitude": 2.971500, "longitude": 101.692800, "featureCode": "PPL"},
-    {"visitOrder": 31, "candidateStopId": 13622, "geonameId": 12607224, "name": "Taman Cheras Jaya Peringkat 1", "latitude": 3.027590, "longitude": 101.761070, "featureCode": "PPL"},
-    {"visitOrder": 32, "candidateStopId": 7010, "geonameId": 1770286, "name": "Kampong Bukit Dukong", "latitude": 3.033330, "longitude": 101.766670, "featureCode": "PPL"},
-    {"visitOrder": 33, "candidateStopId": 7923, "geonameId": 1773271, "name": "Jalan Bangi", "latitude": 2.916670, "longitude": 101.816670, "featureCode": "PPL"},
-    {"visitOrder": 34, "candidateStopId": 7084, "geonameId": 1770390, "name": "Kampung Bukit", "latitude": 2.816670, "longitude": 101.833330, "featureCode": "PPL"},
+    {"visitOrder": 31, "candidateStopId": 8140, "geonameId": 6697380, "name": "Putrajaya", "latitude": 2.935270, "longitude": 101.691120, "featureCode": "PPLG"},
+    {"visitOrder": 32, "candidateStopId": 7923, "geonameId": 1773271, "name": "Jalan Bangi", "latitude": 2.916670, "longitude": 101.816670, "featureCode": "PPL"},
+    {"visitOrder": 33, "candidateStopId": 7084, "geonameId": 1770390, "name": "Kampung Bukit", "latitude": 2.816670, "longitude": 101.833330, "featureCode": "PPL"},
+    {"visitOrder": 34, "candidateStopId": 13851, "geonameId": 12750582, "name": "Seremban 2", "latitude": 2.689820, "longitude": 101.907660, "featureCode": "PPL"},
     {"visitOrder": 35, "candidateStopId": 7900, "geonameId": 1771741, "name": "Kampung Abok", "latitude": 2.702400, "longitude": 101.949900, "featureCode": "PPL"},
     {"visitOrder": 36, "candidateStopId": 6017, "geonameId": 1768727, "name": "Kampung Jiboi", "latitude": 2.736700, "longitude": 101.960600, "featureCode": "PPL"},
     {"visitOrder": 37, "candidateStopId": 2926, "geonameId": 1763934, "name": "Kampung Sungai Machang Hilir", "latitude": 2.862300, "longitude": 101.906400, "featureCode": "PPL"},
     {"visitOrder": 38, "candidateStopId": 10787, "geonameId": 7688622, "name": "Taman Asa Jaya", "latitude": 2.985700, "longitude": 101.818200, "featureCode": "PPL"},
-    {"visitOrder": 39, "candidateStopId": 10771, "geonameId": 7688605, "name": "Kampung Tasik", "latitude": 3.129100, "longitude": 101.774800, "featureCode": "PPL"},
-    {"visitOrder": 40, "candidateStopId": 8031, "geonameId": 1780846, "name": "Batu Empat", "latitude": 3.166670, "longitude": 101.750000, "featureCode": "PPL"},
-    {"visitOrder": 41, "candidateStopId": 4533, "geonameId": 1766273, "name": "Kampong Pandan Dalam", "latitude": 3.150000, "longitude": 101.733330, "featureCode": "PPL"},
-    {"visitOrder": 42, "candidateStopId": 701, "geonameId": 1735161, "name": "Kuala Lumpur", "latitude": 3.141200, "longitude": 101.686530, "featureCode": "PPLC"}
+    {"visitOrder": 39, "candidateStopId": 13622, "geonameId": 12607224, "name": "Taman Cheras Jaya Peringkat 1", "latitude": 3.027590, "longitude": 101.761070, "featureCode": "PPL"},
+    {"visitOrder": 40, "candidateStopId": 7010, "geonameId": 1770286, "name": "Kampong Bukit Dukong", "latitude": 3.033330, "longitude": 101.766670, "featureCode": "PPL"},
+    {"visitOrder": 41, "candidateStopId": 10771, "geonameId": 7688605, "name": "Kampung Tasik", "latitude": 3.129100, "longitude": 101.774800, "featureCode": "PPL"},
+    {"visitOrder": 42, "candidateStopId": 8031, "geonameId": 1780846, "name": "Batu Empat", "latitude": 3.166670, "longitude": 101.750000, "featureCode": "PPL"},
+    {"visitOrder": 43, "candidateStopId": 4533, "geonameId": 1766273, "name": "Kampong Pandan Dalam", "latitude": 3.150000, "longitude": 101.733330, "featureCode": "PPL"},
+    {"visitOrder": 44, "candidateStopId": 701, "geonameId": 1735161, "name": "Kuala Lumpur", "latitude": 3.141200, "longitude": 101.686530, "featureCode": "PPLC"}
   ],
   "decisionTrace": [
   ]

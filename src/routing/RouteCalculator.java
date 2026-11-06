@@ -49,7 +49,7 @@ public final class RouteCalculator {
             List<CandidateStop> candidateStops) {
         Objects.requireNonNull(routeStopIds, "routeStopIds");
         Objects.requireNonNull(depot, "depot");
-        validateCandidateStops(candidateStops);
+        Objects.requireNonNull(candidateStops, "candidateStops");
         if (position < 0 || position > routeStopIds.size()) {
             throw new IndexOutOfBoundsException("Insertion position out of range: " + position);
         }
@@ -83,6 +83,22 @@ public final class RouteCalculator {
         List<Integer> withInsertedStop = new ArrayList<>(routeStopIds);
         withInsertedStop.add(position, stopId);
         return List.copyOf(withInsertedStop);
+    }
+
+    /**
+     * Marks the sites a closed route can visit at all. A route through a site
+     * is at least the solo round trip from the depot, so a site whose round
+     * trip exceeds the budget can never be on any route.
+     */
+    public static boolean[] reachableSites(Coordinate depot, List<CandidateStop> candidateStops, double budgetKm) {
+        Objects.requireNonNull(depot, "depot");
+        validateCandidateStops(candidateStops);
+        boolean[] reachable = new boolean[candidateStops.size()];
+        for (CandidateStop stop : candidateStops) {
+            reachable[stop.id()] = 2.0 * Haversine.distanceKm(depot, stop.coordinate())
+                    <= budgetKm + DISTANCE_EPSILON;
+        }
+        return reachable;
     }
 
     public static boolean fitsBudget(double currentLengthKm, double additionalLengthKm, double budgetKm) {

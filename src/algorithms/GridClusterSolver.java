@@ -61,7 +61,6 @@ public final class GridClusterSolver implements RoutingSolver {
      */
     public static final double SELECTION_COST_OFFSET_KM = 10.0;
     private static final double SCORE_EPSILON = 1.0e-9;
-    private static final double DISTANCE_EPSILON = 1.0e-9;
 
     private final int maximumTwoOptPasses;
     private final boolean pruneUnreachable;
@@ -149,21 +148,18 @@ public final class GridClusterSolver implements RoutingSolver {
             route = acceptStop(route, anchor, insertion, instance, coverageIndex, served);
         }
 
-        steps.phase("polish", "2-opt: reverse route segments when that shortens the tour (at most "
-                + maximumTwoOptPasses + " passes, one move per pass). Same code as Approach A.");
-        TwoOptResult polished = TwoOptPolisher.polish(
-                route, instance.depot(), instance.candidateStops(), maximumTwoOptPasses,
-                steps.enabled() ? (stopIds, first, second, changeKm, lengthKm) -> steps.route(
-                        stopIds, lengthKm, String.format(Locale.ROOT,
-                                "2-opt reversed route positions %d to %d, saving %.3f km.",
-                                first + 1, second + 1, -changeKm)) : null);
+        steps.phase("polish", "2-opt: reverse route segments when that shortens the tour ("
+                + TwoOptPolisher.describeLimit(maximumTwoOptPasses) + "). Same code as Approach A.");
+        TwoOptResult polished = polish(route, instance);
         route = polished.route();
+        int twoOptImprovements = polished.improvements();
         if (polished.improvements() == 0) {
             steps.note("2-opt found no move that shortens the route.");
         }
 
         steps.phase("refill", "Refill: retry the skipped anchors with whatever budget is left, "
-                + "best population per extra km first (same rule as Approach A).");
+                + "best population per extra km first (same rule as Approach A). When none fit, run "
+                + "2-opt again; if that saves km, retry.");
         int refilledStops = 0;
         while (true) {
             int bestAnchor = -1;
@@ -191,6 +187,12 @@ public final class GridClusterSolver implements RoutingSolver {
                 }
             }
             if (bestAnchor < 0) {
+                TwoOptResult repolished = polish(route, instance);
+                if (repolished.improvements() > 0) {
+                    route = repolished.route();
+                    twoOptImprovements += repolished.improvements();
+                    continue;
+                }
                 steps.note(String.format(Locale.ROOT,
                         "None of the %d skipped anchors both adds coverage and fits the %.2f km left. Done.",
                         skipped.size(), instance.travelBudgetKm() - route.totalDistanceKm()));
@@ -223,7 +225,7 @@ public final class GridClusterSolver implements RoutingSolver {
                 statistics.siteEvaluations,
                 skipped.size(),
                 refilledStops,
-                polished.improvements());
+                twoOptImprovements);
 
         if (steps.enabled()) {
             Map<String, Number> counters = new LinkedHashMap<>();
@@ -244,10 +246,21 @@ public final class GridClusterSolver implements RoutingSolver {
         return result;
     }
 
+    private TwoOptResult polish(Route route, ProblemInstance instance) {
+        return TwoOptPolisher.polish(
+                route, instance.depot(), instance.candidateStops(), maximumTwoOptPasses,
+                steps.enabled() ? (stopIds, first, second, changeKm, lengthKm) -> steps.route(
+                        stopIds, lengthKm, String.format(Locale.ROOT,
+                                "2-opt reversed route positions %d to %d, saving %.3f km.",
+                                first + 1, second + 1, -changeKm)) : null);
+    }
+
     private Grid buildGrid(ProblemInstance instance, CoverageIndex coverageIndex, Statistics statistics) {
         double cellSideKm = Math.max(2.0 * instance.serviceRadiusKm() * CELL_SIDE_MARGIN, 1.0e-3);
         CoordinateProjector projector = new CoordinateProjector(instance.depot());
         Grid grid = new Grid(cellSideKm, instance.candidateStops().size());
+        boolean[] reachable = RouteCalculator.reachableSites(
+                instance.depot(), instance.candidateStops(), instance.travelBudgetKm());
 
         int noCoverage = 0;
         for (CandidateStop site : instance.candidateStops()) {
@@ -255,8 +268,7 @@ public final class GridClusterSolver implements RoutingSolver {
                 noCoverage++;
                 continue;
             }
-            double roundTripKm = 2.0 * Haversine.distanceKm(instance.depot(), site.coordinate());
-            if (pruneUnreachable && roundTripKm > instance.travelBudgetKm() + DISTANCE_EPSILON) {
+            if (pruneUnreachable && !reachable[site.id()]) {
                 statistics.prunedSites++;
                 continue;
             }
@@ -272,7 +284,8 @@ public final class GridClusterSolver implements RoutingSolver {
             }
             cell.siteIds.add(site.id());
             grid.cellOfSite[site.id()] = cell.id;
-            grid.selectionCostKm[site.id()] = roundTripKm + SELECTION_COST_OFFSET_KM;
+            grid.selectionCostKm[site.id()] = 2.0 * Haversine.distanceKm(instance.depot(), site.coordinate())
+                    + SELECTION_COST_OFFSET_KM;
         }
 
         if (steps.enabled()) {

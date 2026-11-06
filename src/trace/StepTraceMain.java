@@ -19,6 +19,7 @@ import java.util.stream.Stream;
 import model.Coordinate;
 import model.ProblemInstance;
 import model.RunResult;
+import routing.TwoOptPolisher;
 
 /**
  * Runs one solver with step recording and writes a trace for the step player.
@@ -30,7 +31,7 @@ import model.RunResult;
 public final class StepTraceMain {
     private static final Coordinate KUALA_LUMPUR_DEPOT = new Coordinate(3.1412, 101.6865);
     private static final Path DEFAULT_TRACES_DIRECTORY = Path.of("web-visual", "step-player", "traces");
-    private static final int TWO_OPT_PASSES = 3;
+    private static final int TWO_OPT_PASSES = TwoOptPolisher.NO_PASS_LIMIT;
 
     private StepTraceMain() {
     }

@@ -117,7 +117,9 @@ returns a `CoverageChange` whenever a stop is accepted.
 
 Contains shared route operations. `RouteCalculator` calculates closed-route
 lengths and checks budgets; `CheapestInsertion` finds the lowest-cost insertion;
-and `TwoOptPolisher` improves a route with a capped number of 2-opt passes.
+and `TwoOptPolisher` improves a route with 2-opt swaps until none helps.
+`reachableSites` marks the sites a route could visit at all, and both approaches
+use it to skip the rest.
 Both approaches must use this shared code for a fair comparison.
 
 ### `src/algorithms/`

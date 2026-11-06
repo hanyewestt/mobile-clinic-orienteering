@@ -6,7 +6,7 @@
     "serviceRadiusKm": 25.000000,
     "travelBudgetKm": 400.000000,
     "scoreRefreshMode": "LAZY",
-    "maximumTwoOptPasses": 3,
+    "maximumTwoOptPasses": 2147483647,
     "decisionTraceCaptured": false,
     "depot": {"latitude": 3.141200, "longitude": 101.686500}
   },
@@ -14,13 +14,13 @@
     "populationCovered": 15616662,
     "townsCovered": 185,
     "routeLengthKm": 398.912163,
-    "runtimeMillis": 15622,
+    "runtimeMillis": 280,
     "routeStopIds": [13848, 13752, 11352, 186, 6950, 13565, 13567, 13777, 697, 12899, 13361, 2961, 5397, 7659, 12000, 1227, 6870, 3106, 12872, 6460, 1708, 1765, 2926, 6176, 5104, 1344, 701]
   },
   "statistics": {
-    "candidateEvaluations": 39466,
-    "heapPops": 15777,
-    "deferredStops": 11845,
+    "candidateEvaluations": 18670,
+    "heapPops": 8845,
+    "deferredStops": 4913,
     "refilledStops": 1,
     "twoOptImprovements": 1
   },
