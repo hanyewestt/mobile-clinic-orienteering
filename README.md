@@ -126,7 +126,8 @@ Contains the solvers only. `RoutingSolver` is the common interface;
 `LazyGreedySolver` implements Approach A in lazy and full-recompute modes and
 returns `ApproachAResult` statistics for the comparison experiment.
 `GridClusterSolver` implements Approach B (hash grid of side about 2r,
-coverage-only selection with exact 3x3 updates, then cheapest-insertion
+selection by new population per km of depot round trip with exact 3x3
+updates, then cheapest-insertion
 routing) and returns `GridClusterResult` statistics.
 `HeldKarpSolver` is an exact baseline restricted to small, hand-checkable
 instances of at most 15 candidate stops.

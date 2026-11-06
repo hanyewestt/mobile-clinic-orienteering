@@ -776,8 +776,8 @@ function renderCard() {
     h += `<dt>New population</dt><dd>${fmtInt.format(ev.gain)}</dd>`;
     if (ev.addedKm != null) h += `<dt>Extra route</dt><dd>${fmtKm(ev.addedKm)}${ev.position != null ? ' · ' + insertionPlace(S.route, ev.position) : ''}</dd>`;
     if (ev.addedKm != null) h += `<dt>Score</dt><dd>${fmtScore(ev.score)}</dd>`;
-    else if (ev.cell != null) h += `<dt>Extra route</dt><dd>not considered (coverage-only selection)</dd>`;
-    if (ev.rival != null) h += `<dt>${ev.addedKm == null ? 'Next in heap' : 'Rival'}</dt><dd>${esc(siteName(ev.rival))} · ${ev.addedKm == null ? fmtInt.format(ev.rivalScore) + ' people' : fmtScore(ev.rivalScore)}</dd>`;
+    else if (ev.cell != null) h += `<dt>Score</dt><dd>${fmtScore(ev.score)} of depot round trip (the route is not considered yet)</dd>`;
+    if (ev.rival != null) h += `<dt>${ev.addedKm == null ? 'Next in heap' : 'Rival'}</dt><dd>${esc(siteName(ev.rival))} · ${fmtScore(ev.rivalScore)}</dd>`;
     if (ev.cell != null) h += `<dt>Grid cell</dt><dd>#${ev.cell}</dd>`;
     if (ev.outcome === 'defer') h += `<dt>Would make route</dt><dd>${fmtKm(S.routeKm + ev.addedKm)} (budget ${fmtKm(T.budgetKm)})</dd>`;
     h += `</dl><p class="why">${esc(ev.text)}</p>`;

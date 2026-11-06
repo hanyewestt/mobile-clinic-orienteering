@@ -296,7 +296,7 @@ function renderInsights() {
     items.push(`<b>${winner}</b> serves more people here: ${fmtInt.format(Math.abs(d))} (${(Math.abs(d) / a.populationCovered * 100).toFixed(1)}%) ${d >= 0 ? 'more for B' : 'more for A'}, with ${b.stops} stops for B against ${a.stops} for A.`);
     const bs = b.stats || {};
     if (bs['Anchors selected'] != null) {
-      items.push(`B picked <b>${bs['Anchors selected']}</b> anchors by coverage alone; <b>${bs['Anchors skipped']}</b> of them did not fit the ${current.B} km budget when routed, and ${bs['Refilled stops'] || 0} came back in the refill.`);
+      items.push(`B picked <b>${bs['Anchors selected']}</b> anchors by people per km of depot round trip; <b>${bs['Anchors skipped']}</b> of them did not fit the ${current.B} km budget when routed, and ${bs['Refilled stops'] || 0} came back in the refill.`);
       items.push(`B's heap needed ${fmtInt.format(bs['Heap pops'])} pops (${fmtInt.format(bs['Stale pops'])} stale) and ${fmtInt.format(bs['Site evaluations'])} site evaluations, against ${fmtInt.format((a.stats || {})['Heap pops'] || 0)} pops and ${fmtInt.format((a.stats || {})['Candidate evaluations'] || 0)} evaluations for A. Pruning removed ${fmtInt.format(bs['Unreachable sites pruned'])} sites whose solo round trip exceeds B.`);
     }
     const perStopA = a.populationCovered / Math.max(a.stops, 1), perStopB = b.populationCovered / Math.max(b.stops, 1);
