@@ -51,7 +51,7 @@ Requires Java 17 or later. From the project root:
 javac -d out $(find src -name '*.java')
 ```
 
-Standard results (`LAZY` or `FULL` for Approach A, `B` for Approach B):
+Standard results (`LAZY` for Approach A, `B` for Approach B):
 
 ```bash
 java -cp out experiments.ExperimentRunner data/processed results/approach-b-r10-b180 10 180 B
@@ -117,16 +117,19 @@ returns a `CoverageChange` whenever a stop is accepted.
 
 Contains shared route operations. `RouteCalculator` calculates closed-route
 lengths and checks budgets; `CheapestInsertion` finds the lowest-cost insertion;
-and `TwoOptPolisher` improves a route with a capped number of 2-opt passes.
+and `TwoOptPolisher` improves a route with 2-opt swaps until none helps.
+`reachableSites` marks the sites a route could visit at all, and both approaches
+use it to skip the rest.
 Both approaches must use this shared code for a fair comparison.
 
 ### `src/algorithms/`
 
 Contains the solvers only. `RoutingSolver` is the common interface;
-`LazyGreedySolver` implements Approach A in lazy and full-recompute modes and
-returns `ApproachAResult` statistics for the comparison experiment.
+`LazyGreedySolver` implements Approach A and returns `ApproachAResult`
+statistics for the comparison experiment.
 `GridClusterSolver` implements Approach B (hash grid of side about 2r,
-coverage-only selection with exact 3x3 updates, then cheapest-insertion
+selection by new population per km of depot round trip with exact 3x3
+updates, then cheapest-insertion
 routing) and returns `GridClusterResult` statistics.
 `HeldKarpSolver` is an exact baseline restricted to small, hand-checkable
 instances of at most 15 candidate stops.
@@ -134,7 +137,7 @@ instances of at most 15 candidate stops.
 ### `src/experiments/`
 
 Contains repeatable experiment code: configurations, budget/radius sweeps,
-lazy-versus-full comparisons, synthetic-data generation, and result collection.
+synthetic-data generation, and result collection.
 `ExperimentRunner` runs one Approach A or Approach B scenario and exports
 `summary.csv`, `route-stops.csv`, and `result.json`.
 

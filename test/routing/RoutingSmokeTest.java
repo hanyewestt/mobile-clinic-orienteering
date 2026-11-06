@@ -42,6 +42,16 @@ public final class RoutingSmokeTest {
                 "2-opt must not make the route longer.");
         check(polished.route().stopIds().size() == 3, "2-opt must preserve all stops.");
 
+        TwoOptResult unlimited = TwoOptPolisher.polish(nonOptimalRoute, DEPOT, STOPS, TwoOptPolisher.NO_PASS_LIMIT);
+        check(unlimited.route().totalDistanceKm() <= polished.route().totalDistanceKm() + 1.0e-9,
+                "Unlimited 2-opt must be at least as short as a limited run.");
+        check(TwoOptPolisher.polish(unlimited.route(), DEPOT, STOPS, TwoOptPolisher.NO_PASS_LIMIT).improvements() == 0,
+                "Unlimited 2-opt must stop only when no swap helps.");
+
+        boolean[] reachable = RouteCalculator.reachableSites(DEPOT, STOPS, 30.0);
+        check(reachable[0], "A 22 km round trip fits a 30 km budget.");
+        check(!reachable[1], "A 44 km round trip does not fit a 30 km budget.");
+
         System.out.println("Routing smoke test passed.");
     }
 

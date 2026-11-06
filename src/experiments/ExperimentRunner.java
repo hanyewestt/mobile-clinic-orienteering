@@ -2,7 +2,6 @@ package experiments;
 
 import algorithms.GridClusterSolver;
 import algorithms.LazyGreedySolver;
-import algorithms.ScoreRefreshMode;
 import coverage.CoverageBuilder;
 import coverage.CoverageIndex;
 import data.ProcessedInstanceLoader;
@@ -10,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import model.Coordinate;
 import model.ProblemInstance;
+import routing.TwoOptPolisher;
 import trace.StepRecorder;
 
 /** Runs and exports reproducible Approach A and Approach B experiments. */
@@ -27,7 +27,6 @@ public final class ExperimentRunner {
         CoverageIndex coverageIndex = CoverageBuilder.build(
                 instance.candidateStops(), instance.demandTowns(), instance.serviceRadiusKm());
         LazyGreedySolver solver = new LazyGreedySolver(
-                config.refreshMode(),
                 config.maximumTwoOptPasses(),
                 config.recordDecisionTrace());
         ExperimentOutcome outcome = new ExperimentOutcome(config, instance, solver.solveDetailed(instance, coverageIndex));
@@ -73,7 +72,7 @@ public final class ExperimentRunner {
 
     /**
      * Usage: ExperimentRunner <processed-data-dir> <output-dir> <radius-km>
-     * <budget-km> <LAZY|FULL|B> [run-name] [--trace]
+     * <budget-km> <LAZY|B> [run-name] [--trace]
      *
      * <p>{@code --trace} adds Approach A's decision trace to result.json. Step
      * traces for the step player come from {@code trace.StepTraceMain} instead.
@@ -82,7 +81,7 @@ public final class ExperimentRunner {
         if (args.length < 5 || args.length > 7) {
             throw new IllegalArgumentException(
                     "Usage: ExperimentRunner <processed-data-dir> <output-dir> <radius-km> "
-                            + "<budget-km> <LAZY|FULL|B> [run-name] [--trace]");
+                            + "<budget-km> <LAZY|B> [run-name] [--trace]");
         }
 
         double radiusKm = Double.parseDouble(args[2]);
@@ -99,7 +98,8 @@ public final class ExperimentRunner {
             }
             String runName = args.length >= 6 ? args[5]
                     : "approach-b-r" + trimDecimal(radiusKm) + "-b" + trimDecimal(budgetKm);
-            ApproachBConfig config = new ApproachBConfig(runName, radiusKm, budgetKm, 3, true, Path.of(args[1]));
+            ApproachBConfig config = new ApproachBConfig(
+                    runName, radiusKm, budgetKm, TwoOptPolisher.NO_PASS_LIMIT, true, Path.of(args[1]));
             ApproachBOutcome outcome = runApproachBFromProcessedData(Path.of(args[0]), config);
             System.out.println("Experiment complete: " + outcome.config().outputDirectory());
             System.out.println("Population covered: " + outcome.approachBResult().runResult().populationCovered());
@@ -107,14 +107,15 @@ public final class ExperimentRunner {
             return;
         }
 
-        ScoreRefreshMode mode = ScoreRefreshMode.valueOf(args[4].toUpperCase());
-        String runName = args.length >= 6 ? args[5] : defaultRunName(radiusKm, budgetKm, mode);
+        if (!"LAZY".equalsIgnoreCase(args[4])) {
+            throw new IllegalArgumentException("Unknown approach: " + args[4] + ". Use LAZY or B.");
+        }
+        String runName = args.length >= 6 ? args[5] : defaultRunName(radiusKm, budgetKm);
         ExperimentConfig config = new ExperimentConfig(
                 runName,
                 radiusKm,
                 budgetKm,
-                mode,
-                3,
+                TwoOptPolisher.NO_PASS_LIMIT,
                 Path.of(args[1]),
                 trace);
         ExperimentOutcome outcome = runApproachAFromProcessedData(Path.of(args[0]), config);
@@ -123,9 +124,8 @@ public final class ExperimentRunner {
         System.out.println("Route length: " + outcome.approachAResult().runResult().route().totalDistanceKm() + " km");
     }
 
-    private static String defaultRunName(double radiusKm, double budgetKm, ScoreRefreshMode mode) {
-        return "approach-a-" + mode.name().toLowerCase()
-                + "-r" + trimDecimal(radiusKm)
+    private static String defaultRunName(double radiusKm, double budgetKm) {
+        return "approach-a-lazy-r" + trimDecimal(radiusKm)
                 + "-b" + trimDecimal(budgetKm);
     }
 

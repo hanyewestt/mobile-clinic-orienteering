@@ -28,15 +28,20 @@ import routing.TwoOptResult;
 import trace.StepRecorder;
 
 /**
- * Approach B: choose stops by coverage alone using a hash grid, then route them.
+ * Approach B: choose stops using a hash grid, then route them.
  *
  * <p>Sites are hashed into square cells slightly wider than {@code 2r}. Two
  * sites that can serve the same town are at most {@code 2r} apart, so picking
  * a site can only lower the gains of sites in its own cell and the 8 cells
  * around it. Each cell keeps one live heap entry holding its current best
  * site; after a pick, only those 9 cells are refreshed, and older entries are
- * recognised as stale by a version number. The live entries are therefore
- * always exact, and the selection order equals plain greedy maximum coverage.
+ * recognised as stale by a version number.
+ *
+ * <p>Sites are ranked by new population divided by a fixed cost: the round
+ * trip from the depot plus {@link #SELECTION_COST_OFFSET_KM}. The cost never
+ * changes, so a score only falls when a nearby pick claims towns, and the live
+ * entries stay exact. Scoring against the current route instead would change
+ * sites everywhere after each pick and lose the local update.
  *
  * <p>Routing ignores coverage: anchors are inserted at their cheapest position
  * in selection order, skipping any that break the budget. The skipped anchors
@@ -50,8 +55,12 @@ public final class GridClusterSolver implements RoutingSolver {
      * town are never more than one cell apart in projected space.
      */
     public static final double CELL_SIDE_MARGIN = 1.01;
+    /**
+     * Added to every site's round trip when ranking, so that sites beside the
+     * depot do not get near-infinite scores whatever their population.
+     */
+    public static final double SELECTION_COST_OFFSET_KM = 10.0;
     private static final double SCORE_EPSILON = 1.0e-9;
-    private static final double DISTANCE_EPSILON = 1.0e-9;
 
     private final int maximumTwoOptPasses;
     private final boolean pruneUnreachable;
@@ -101,9 +110,9 @@ public final class GridClusterSolver implements RoutingSolver {
                 + "8 neighbouring cells can share towns with a cell, so updates stay local.");
         Grid grid = buildGrid(instance, coverageIndex, statistics);
 
-        steps.phase("select", "Coverage-only selection: pop the cell whose best site serves the most "
-                + "unplanned population, pick that site as an anchor, then refresh only the 3x3 block "
-                + "of cells around it. Route cost is ignored here.");
+        steps.phase("select", "Selection: pop the cell whose best site has the highest unplanned population "
+                + "per km of depot round trip, pick that site as an anchor, then refresh only the 3x3 "
+                + "block of cells around it. The route itself is not considered here.");
         CoverageTracker planned = new CoverageTracker(coverageIndex, instance.demandTowns());
         List<Integer> anchors = selectAnchors(instance, coverageIndex, grid, planned, statistics);
 
@@ -139,21 +148,18 @@ public final class GridClusterSolver implements RoutingSolver {
             route = acceptStop(route, anchor, insertion, instance, coverageIndex, served);
         }
 
-        steps.phase("polish", "2-opt: reverse route segments when that shortens the tour (at most "
-                + maximumTwoOptPasses + " passes, one move per pass). Same code as Approach A.");
-        TwoOptResult polished = TwoOptPolisher.polish(
-                route, instance.depot(), instance.candidateStops(), maximumTwoOptPasses,
-                steps.enabled() ? (stopIds, first, second, changeKm, lengthKm) -> steps.route(
-                        stopIds, lengthKm, String.format(Locale.ROOT,
-                                "2-opt reversed route positions %d to %d, saving %.3f km.",
-                                first + 1, second + 1, -changeKm)) : null);
+        steps.phase("polish", "2-opt: reverse route segments when that shortens the tour ("
+                + TwoOptPolisher.describeLimit(maximumTwoOptPasses) + "). Same code as Approach A.");
+        TwoOptResult polished = polish(route, instance);
         route = polished.route();
+        int twoOptImprovements = polished.improvements();
         if (polished.improvements() == 0) {
             steps.note("2-opt found no move that shortens the route.");
         }
 
         steps.phase("refill", "Refill: retry the skipped anchors with whatever budget is left, "
-                + "best population per extra km first (same rule as Approach A).");
+                + "best population per extra km first (same rule as Approach A). When none fit, run "
+                + "2-opt again; if that saves km, retry.");
         int refilledStops = 0;
         while (true) {
             int bestAnchor = -1;
@@ -181,6 +187,12 @@ public final class GridClusterSolver implements RoutingSolver {
                 }
             }
             if (bestAnchor < 0) {
+                TwoOptResult repolished = polish(route, instance);
+                if (repolished.improvements() > 0) {
+                    route = repolished.route();
+                    twoOptImprovements += repolished.improvements();
+                    continue;
+                }
                 steps.note(String.format(Locale.ROOT,
                         "None of the %d skipped anchors both adds coverage and fits the %.2f km left. Done.",
                         skipped.size(), instance.travelBudgetKm() - route.totalDistanceKm()));
@@ -213,7 +225,7 @@ public final class GridClusterSolver implements RoutingSolver {
                 statistics.siteEvaluations,
                 skipped.size(),
                 refilledStops,
-                polished.improvements());
+                twoOptImprovements);
 
         if (steps.enabled()) {
             Map<String, Number> counters = new LinkedHashMap<>();
@@ -234,10 +246,21 @@ public final class GridClusterSolver implements RoutingSolver {
         return result;
     }
 
+    private TwoOptResult polish(Route route, ProblemInstance instance) {
+        return TwoOptPolisher.polish(
+                route, instance.depot(), instance.candidateStops(), maximumTwoOptPasses,
+                steps.enabled() ? (stopIds, first, second, changeKm, lengthKm) -> steps.route(
+                        stopIds, lengthKm, String.format(Locale.ROOT,
+                                "2-opt reversed route positions %d to %d, saving %.3f km.",
+                                first + 1, second + 1, -changeKm)) : null);
+    }
+
     private Grid buildGrid(ProblemInstance instance, CoverageIndex coverageIndex, Statistics statistics) {
         double cellSideKm = Math.max(2.0 * instance.serviceRadiusKm() * CELL_SIDE_MARGIN, 1.0e-3);
         CoordinateProjector projector = new CoordinateProjector(instance.depot());
         Grid grid = new Grid(cellSideKm, instance.candidateStops().size());
+        boolean[] reachable = RouteCalculator.reachableSites(
+                instance.depot(), instance.candidateStops(), instance.travelBudgetKm());
 
         int noCoverage = 0;
         for (CandidateStop site : instance.candidateStops()) {
@@ -245,8 +268,7 @@ public final class GridClusterSolver implements RoutingSolver {
                 noCoverage++;
                 continue;
             }
-            if (pruneUnreachable && 2.0 * Haversine.distanceKm(instance.depot(), site.coordinate())
-                    > instance.travelBudgetKm() + DISTANCE_EPSILON) {
+            if (pruneUnreachable && !reachable[site.id()]) {
                 statistics.prunedSites++;
                 continue;
             }
@@ -262,6 +284,8 @@ public final class GridClusterSolver implements RoutingSolver {
             }
             cell.siteIds.add(site.id());
             grid.cellOfSite[site.id()] = cell.id;
+            grid.selectionCostKm[site.id()] = 2.0 * Haversine.distanceKm(instance.depot(), site.coordinate())
+                    + SELECTION_COST_OFFSET_KM;
         }
 
         if (steps.enabled()) {
@@ -289,11 +313,11 @@ public final class GridClusterSolver implements RoutingSolver {
             Statistics statistics) {
         boolean[] chosen = new boolean[instance.candidateStops().size()];
         PriorityQueue<CellEntry> heap = new PriorityQueue<>(
-                Comparator.comparingLong(CellEntry::gain).reversed().thenComparingInt(CellEntry::cellId));
+                Comparator.comparingDouble(CellEntry::score).reversed().thenComparingInt(CellEntry::cellId));
         for (Cell cell : grid.cells) {
-            refresh(cell, planned, chosen, statistics, instance, "Initial best site in this cell.");
+            refresh(cell, grid, planned, chosen, statistics, instance, "Initial best site in this cell.");
             if (cell.bestGain > 0) {
-                heap.add(new CellEntry(cell.id, cell.bestSiteId, cell.bestGain, cell.version));
+                heap.add(new CellEntry(cell.id, cell.bestSiteId, cell.bestGain, cell.bestScore, cell.version));
             }
         }
 
@@ -304,7 +328,7 @@ public final class GridClusterSolver implements RoutingSolver {
             Cell cell = grid.cells.get(entry.cellId());
             if (entry.version() != cell.version) {
                 statistics.stalePops++;
-                steps.consider(entry.siteId(), entry.gain(), Double.NaN, -1, entry.gain(), StepRecorder.SKIP,
+                steps.consider(entry.siteId(), entry.gain(), Double.NaN, -1, entry.score(), StepRecorder.SKIP,
                         -1, Double.NaN, cell.id,
                         "Stale heap entry: this cell was refreshed after a nearby pick, and its newer entry "
                                 + "is already in the heap. Dropped.");
@@ -313,15 +337,16 @@ public final class GridClusterSolver implements RoutingSolver {
 
             int siteId = entry.siteId();
             if (selfCheck) {
-                verifyGlobalBest(entry.gain(), grid, planned, chosen);
+                verifyGlobalBest(entry.score(), grid, planned, chosen);
             }
             if (steps.enabled()) {
                 CellEntry next = heap.peek();
-                steps.consider(siteId, entry.gain(), Double.NaN, -1, entry.gain(), StepRecorder.ACCEPT,
-                        next == null ? -1 : next.siteId(), next == null ? Double.NaN : next.gain(), cell.id,
-                        "This cell's entry is current (no nearby pick since its last refresh), so its gain is "
+                steps.consider(siteId, entry.gain(), Double.NaN, -1, entry.score(), StepRecorder.ACCEPT,
+                        next == null ? -1 : next.siteId(), next == null ? Double.NaN : next.score(), cell.id,
+                        "This cell's entry is current (no nearby pick since its last refresh), so its score is "
                                 + "exact and it is the largest in the heap. Its best site becomes an anchor. "
-                                + "Score here is plain population: route cost is not considered.");
+                                + "Score here is new population per km of depot round trip, not the extra km "
+                                + "on a route.");
             }
 
             int[] newlyPlanned = steps.enabled() ? unservedTowns(siteId, coverageIndex, planned) : null;
@@ -341,10 +366,11 @@ public final class GridClusterSolver implements RoutingSolver {
                     if (neighbour == null) {
                         continue;
                     }
-                    refresh(neighbour, planned, chosen, statistics, instance, reason);
+                    refresh(neighbour, grid, planned, chosen, statistics, instance, reason);
                     statistics.cellRefreshes++;
                     if (neighbour.bestGain > 0) {
-                        heap.add(new CellEntry(neighbour.id, neighbour.bestSiteId, neighbour.bestGain, neighbour.version));
+                        heap.add(new CellEntry(
+                                neighbour.id, neighbour.bestSiteId, neighbour.bestGain, neighbour.bestScore, neighbour.version));
                     }
                 }
             }
@@ -360,6 +386,7 @@ public final class GridClusterSolver implements RoutingSolver {
 
     private void refresh(
             Cell cell,
+            Grid grid,
             CoverageTracker planned,
             boolean[] chosen,
             Statistics statistics,
@@ -367,13 +394,16 @@ public final class GridClusterSolver implements RoutingSolver {
             String reason) {
         int bestSiteId = -1;
         long bestGain = 0;
+        double bestScore = 0.0;
         for (int siteId : cell.siteIds) {
             if (chosen[siteId]) {
                 continue;
             }
             long gain = planned.marginalPopulationGain(siteId);
             statistics.siteEvaluations++;
-            if (gain > bestGain) {
+            double siteScore = selectionScore(gain, grid.selectionCostKm[siteId]);
+            if (siteScore > bestScore) {
+                bestScore = siteScore;
                 bestGain = gain;
                 bestSiteId = siteId;
             }
@@ -381,6 +411,7 @@ public final class GridClusterSolver implements RoutingSolver {
         cell.version++;
         cell.bestSiteId = bestSiteId;
         cell.bestGain = bestGain;
+        cell.bestScore = bestScore;
         if (steps.enabled()) {
             steps.cell(cell.id, bestSiteId, bestGain,
                     bestGain > 0 ? StepRecorder.CELL_OPEN : StepRecorder.CELL_EMPTY,
@@ -424,42 +455,48 @@ public final class GridClusterSolver implements RoutingSolver {
         return java.util.Arrays.copyOf(towns, size);
     }
 
-    /** Test hook: the popped gain must equal the best gain over every unchosen gridded site. */
-    private static void verifyGlobalBest(long poppedGain, Grid grid, CoverageTracker planned, boolean[] chosen) {
-        long best = 0;
+    /** Test hook: the popped score must equal the best score over every unchosen gridded site. */
+    private static void verifyGlobalBest(double poppedScore, Grid grid, CoverageTracker planned, boolean[] chosen) {
+        double best = 0.0;
         for (Cell cell : grid.cells) {
-            for (int siteId : cell.siteIds) {
-                if (!chosen[siteId]) {
-                    best = Math.max(best, planned.marginalPopulationGain(siteId));
-                }
-            }
+            best = Math.max(best, bruteForceBestScore(cell, grid, planned, chosen));
         }
-        if (best != poppedGain) {
-            throw new IllegalStateException("Grid selection is not exact: popped " + poppedGain + ", best " + best);
+        if (best != poppedScore) {
+            throw new IllegalStateException("Grid selection is not exact: popped " + poppedScore + ", best " + best);
         }
     }
 
-    /** Test hook: every cell's stored best gain must match a brute-force recomputation. */
+    /** Test hook: every cell's stored best score must match a brute-force recomputation. */
     private static void verifyCells(Grid grid, CoverageTracker planned, boolean[] chosen) {
         for (Cell cell : grid.cells) {
-            long best = 0;
-            for (int siteId : cell.siteIds) {
-                if (!chosen[siteId]) {
-                    best = Math.max(best, planned.marginalPopulationGain(siteId));
-                }
-            }
-            if (best != cell.bestGain) {
-                throw new IllegalStateException("Cell " + cell.id + " has stale gain " + cell.bestGain
+            double best = bruteForceBestScore(cell, grid, planned, chosen);
+            if (best != cell.bestScore) {
+                throw new IllegalStateException("Cell " + cell.id + " has stale score " + cell.bestScore
                         + " but its true best is " + best + ".");
             }
         }
+    }
+
+    private static double bruteForceBestScore(Cell cell, Grid grid, CoverageTracker planned, boolean[] chosen) {
+        double best = 0.0;
+        for (int siteId : cell.siteIds) {
+            if (!chosen[siteId]) {
+                best = Math.max(best, selectionScore(
+                        planned.marginalPopulationGain(siteId), grid.selectionCostKm[siteId]));
+            }
+        }
+        return best;
+    }
+
+    private static double selectionScore(long gain, double selectionCostKm) {
+        return gain / selectionCostKm;
     }
 
     private static double score(long gain, double addedDistanceKm) {
         return gain / (addedDistanceKm + SCORE_EPSILON);
     }
 
-    private record CellEntry(int cellId, int siteId, long gain, int version) {
+    private record CellEntry(int cellId, int siteId, long gain, double score, int version) {
     }
 
     private static final class Cell {
@@ -470,6 +507,7 @@ public final class GridClusterSolver implements RoutingSolver {
         private int version;
         private int bestSiteId = -1;
         private long bestGain;
+        private double bestScore;
 
         private Cell(int id, int column, int row) {
             this.id = id;
@@ -483,10 +521,12 @@ public final class GridClusterSolver implements RoutingSolver {
         private final Map<Long, Cell> cellsByKey = new HashMap<>();
         private final List<Cell> cells = new ArrayList<>();
         private final int[] cellOfSite;
+        private final double[] selectionCostKm;
 
         private Grid(double cellSideKm, int siteCount) {
             this.cellSideKm = cellSideKm;
             this.cellOfSite = new int[siteCount];
+            this.selectionCostKm = new double[siteCount];
             java.util.Arrays.fill(cellOfSite, -1);
         }
 

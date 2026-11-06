@@ -1,9 +1,7 @@
 package trace;
 
-import algorithms.ApproachAResult;
 import algorithms.GridClusterSolver;
 import algorithms.LazyGreedySolver;
-import algorithms.ScoreRefreshMode;
 import coverage.CoverageBuilder;
 import coverage.CoverageIndex;
 import data.ProcessedInstanceLoader;
@@ -19,18 +17,19 @@ import java.util.stream.Stream;
 import model.Coordinate;
 import model.ProblemInstance;
 import model.RunResult;
+import routing.TwoOptPolisher;
 
 /**
  * Runs one solver with step recording and writes a trace for the step player.
  *
  * <p>Usage: {@code StepTraceMain <processed-data-dir> <radius-km> <budget-km> <algorithm> [traces-dir]}
- * where algorithm is {@code A-LAZY}, {@code A-FULL} or {@code B}. The traces directory
+ * where algorithm is {@code A-LAZY} or {@code B}. The traces directory
  * defaults to {@code web-visual/step-player/traces}.
  */
 public final class StepTraceMain {
     private static final Coordinate KUALA_LUMPUR_DEPOT = new Coordinate(3.1412, 101.6865);
     private static final Path DEFAULT_TRACES_DIRECTORY = Path.of("web-visual", "step-player", "traces");
-    private static final int TWO_OPT_PASSES = 3;
+    private static final int TWO_OPT_PASSES = TwoOptPolisher.NO_PASS_LIMIT;
 
     private StepTraceMain() {
     }
@@ -38,7 +37,7 @@ public final class StepTraceMain {
     public static void main(String[] args) throws IOException {
         if (args.length < 4 || args.length > 5) {
             throw new IllegalArgumentException(
-                    "Usage: StepTraceMain <processed-data-dir> <radius-km> <budget-km> <A-LAZY|A-FULL|B> [traces-dir]");
+                    "Usage: StepTraceMain <processed-data-dir> <radius-km> <budget-km> <A-LAZY|B> [traces-dir]");
         }
         double radiusKm = Double.parseDouble(args[1]);
         double budgetKm = Double.parseDouble(args[2]);
@@ -53,12 +52,8 @@ public final class StepTraceMain {
         JsonStepRecorder recorder = new JsonStepRecorder();
         RunResult runResult;
         switch (algorithmKey) {
-            case "A-LAZY", "A-FULL" -> {
-                ScoreRefreshMode mode = algorithmKey.equals("A-LAZY") ? ScoreRefreshMode.LAZY : ScoreRefreshMode.FULL;
-                ApproachAResult result = new LazyGreedySolver(mode, TWO_OPT_PASSES, false, recorder)
-                        .solveDetailed(instance, coverageIndex);
-                runResult = result.runResult();
-            }
+            case "A-LAZY" -> runResult = new LazyGreedySolver(TWO_OPT_PASSES, false, recorder)
+                    .solveDetailed(instance, coverageIndex).runResult();
             case "B" -> runResult = new GridClusterSolver(TWO_OPT_PASSES, true, recorder)
                     .solveDetailed(instance, coverageIndex).runResult();
             default -> throw new IllegalArgumentException("Unknown algorithm: " + args[3]);

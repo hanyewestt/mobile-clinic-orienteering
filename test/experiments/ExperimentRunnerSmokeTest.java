@@ -7,7 +7,6 @@
  */
 package experiments;
 
-import algorithms.ScoreRefreshMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -40,7 +39,7 @@ public final class ExperimentRunnerSmokeTest {
                 50.0);
         Path outputDirectory = Files.createTempDirectory("mobile-clinic-experiment-");
         ExperimentConfig config = new ExperimentConfig(
-                "smoke-run", 10.0, 50.0, ScoreRefreshMode.LAZY, 3, outputDirectory, true);
+                "smoke-run", 10.0, 50.0, 3, outputDirectory, true);
 
         ExperimentOutcome outcome = ExperimentRunner.runApproachA(instance, config);
 

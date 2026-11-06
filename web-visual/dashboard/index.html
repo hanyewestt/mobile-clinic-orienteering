@@ -19,7 +19,6 @@
     --down: #b42323;
     --a-lazy: #eb6834;
     --b-grid: #2a78d6;
-    --a-full: #1baf7a;
     --site: #d6d4cc;
     --town: #a9a69c;
     --shadow: 0 1px 2px rgba(0,0,0,.04), 0 4px 18px rgba(0,0,0,.05);
@@ -28,14 +27,14 @@
     :root:not([data-theme="light"]) {
       --page: #0d0d0d; --surface: #1a1a19; --card: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
       --grid: #2c2c2a; --axis: #383835; --chip: #262624; --up: #0ca30c; --down: #e66767;
-      --a-lazy: #d95926; --b-grid: #3987e5; --a-full: #199e70; --site: #333331; --town: #6c6a64;
+      --a-lazy: #d95926; --b-grid: #3987e5; --site: #333331; --town: #6c6a64;
       --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 18px rgba(0,0,0,.3);
     }
   }
   :root[data-theme="dark"] {
     --page: #0d0d0d; --surface: #1a1a19; --card: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
     --grid: #2c2c2a; --axis: #383835; --chip: #262624; --up: #0ca30c; --down: #e66767;
-    --a-lazy: #d95926; --b-grid: #3987e5; --a-full: #199e70; --site: #333331; --town: #6c6a64;
+    --a-lazy: #d95926; --b-grid: #3987e5; --site: #333331; --town: #6c6a64;
     --shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 18px rgba(0,0,0,.3);
   }
   * { box-sizing: border-box; }
@@ -168,7 +167,6 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;',
 const ALGS = {
   'a-lazy': { label: 'A · lazy greedy', short: 'A lazy', color: '--a-lazy', order: 0 },
   'b':      { label: 'B · grid, then route', short: 'B grid', color: '--b-grid', order: 1 },
-  'a-full': { label: 'A · full greedy', short: 'A full', color: '--a-full', order: 2 },
 };
 const css = v => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 
@@ -193,7 +191,7 @@ async function loadAll() {
   const loading = document.getElementById('loading');
   for (let i = 0; i < names.length; i++) {
     const name = names[i];
-    const m = name.match(/^(a-lazy|a-full|b)-r([\d_]+)-b([\d_]+)$/);
+    const m = name.match(/^(a-lazy|b)-r([\d_]+)-b([\d_]+)$/);
     if (!m) continue;
     loading.textContent = `Loading traces… ${i + 1} / ${names.length}`;
     let t;
@@ -288,7 +286,7 @@ document.addEventListener('mousemove', e => {
 
 /* ---------- Insights, written from the numbers ---------- */
 function renderInsights() {
-  const A = current.runs['a-lazy'], B = current.runs['b'], F = current.runs['a-full'];
+  const A = current.runs['a-lazy'], B = current.runs['b'];
   const items = [];
   if (A && B) {
     const a = A.result, b = B.result, d = b.populationCovered - a.populationCovered;
@@ -296,15 +294,11 @@ function renderInsights() {
     items.push(`<b>${winner}</b> serves more people here: ${fmtInt.format(Math.abs(d))} (${(Math.abs(d) / a.populationCovered * 100).toFixed(1)}%) ${d >= 0 ? 'more for B' : 'more for A'}, with ${b.stops} stops for B against ${a.stops} for A.`);
     const bs = b.stats || {};
     if (bs['Anchors selected'] != null) {
-      items.push(`B picked <b>${bs['Anchors selected']}</b> anchors by coverage alone; <b>${bs['Anchors skipped']}</b> of them did not fit the ${current.B} km budget when routed, and ${bs['Refilled stops'] || 0} came back in the refill.`);
+      items.push(`B picked <b>${bs['Anchors selected']}</b> anchors by people per km of depot round trip; <b>${bs['Anchors skipped']}</b> of them did not fit the ${current.B} km budget when routed, and ${bs['Refilled stops'] || 0} came back in the refill.`);
       items.push(`B's heap needed ${fmtInt.format(bs['Heap pops'])} pops (${fmtInt.format(bs['Stale pops'])} stale) and ${fmtInt.format(bs['Site evaluations'])} site evaluations, against ${fmtInt.format((a.stats || {})['Heap pops'] || 0)} pops and ${fmtInt.format((a.stats || {})['Candidate evaluations'] || 0)} evaluations for A. Pruning removed ${fmtInt.format(bs['Unreachable sites pruned'])} sites whose solo round trip exceeds B.`);
     }
     const perStopA = a.populationCovered / Math.max(a.stops, 1), perStopB = b.populationCovered / Math.max(b.stops, 1);
     items.push(`Population per stop: A ${fmtInt.format(Math.round(perStopA))}, B ${fmtInt.format(Math.round(perStopB))}. ${perStopB > perStopA ? 'B spends its budget on fewer, larger anchors; A adds many cheap nearby stops.' : 'A gets more out of each stop here.'}`);
-  }
-  if (A && F) {
-    const d = F.result.populationCovered - A.result.populationCovered;
-    items.push(`Full re-scoring (A full) ${d >= 0 ? 'gains' : 'loses'} ${fmtInt.format(Math.abs(d))} people against lazy A. ${d < 0 ? 'Greedy is not monotone in effort: recomputing every score changed early picks and left a worse route.' : ''}`);
   }
   items.push(`Both approaches share coverage lists, cheapest insertion, 2-opt and refill, so the difference comes from the selection rule. These are heuristics on one instance; differences of a few percent can flip with r and B.`);
   document.getElementById('insights').innerHTML = `<ul>${items.map(i => `<li>${i}</li>`).join('')}</ul>`;
@@ -323,7 +317,7 @@ function renderStats() {
 
 /* ---------- All-scenarios table ---------- */
 function renderTable() {
-  const algs = ['a-lazy', 'b', 'a-full'].filter(a => runs.some(r => r.alg === a));
+  const algs = ['a-lazy', 'b'].filter(a => runs.some(r => r.alg === a));
   let h = `<thead><tr><th>Scenario</th>${algs.map(a => `<th>${ALGS[a].short} · people</th><th>${ALGS[a].short} · stops</th>`).join('')}</tr></thead><tbody>`;
   for (const s of sortedScenarios()) {
     const best = Math.max(...algs.filter(a => s.runs[a]).map(a => s.runs[a].result.populationCovered));

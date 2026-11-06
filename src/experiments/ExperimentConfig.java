@@ -1,6 +1,5 @@
 package experiments;
 
-import algorithms.ScoreRefreshMode;
 import java.nio.file.Path;
 import java.util.Objects;
 
@@ -9,7 +8,6 @@ public record ExperimentConfig(
         String runName,
         double serviceRadiusKm,
         double travelBudgetKm,
-        ScoreRefreshMode refreshMode,
         int maximumTwoOptPasses,
         Path outputDirectory,
         boolean recordDecisionTrace) {
@@ -18,16 +16,14 @@ public record ExperimentConfig(
             String runName,
             double serviceRadiusKm,
             double travelBudgetKm,
-            ScoreRefreshMode refreshMode,
             int maximumTwoOptPasses,
             Path outputDirectory) {
-        this(runName, serviceRadiusKm, travelBudgetKm, refreshMode, maximumTwoOptPasses,
+        this(runName, serviceRadiusKm, travelBudgetKm, maximumTwoOptPasses,
                 outputDirectory, false);
     }
 
     public ExperimentConfig {
         runName = Objects.requireNonNull(runName, "runName");
-        refreshMode = Objects.requireNonNull(refreshMode, "refreshMode");
         outputDirectory = Objects.requireNonNull(outputDirectory, "outputDirectory");
         if (runName.isBlank()) {
             throw new IllegalArgumentException("Run name must not be blank.");

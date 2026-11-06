@@ -5,36 +5,43 @@
   "scenario": {
     "serviceRadiusKm": 25.000000,
     "travelBudgetKm": 400.000000,
-    "maximumTwoOptPasses": 3,
+    "maximumTwoOptPasses": 2147483647,
     "pruneUnreachable": true,
     "depot": {"latitude": 3.141200, "longitude": 101.686500}
   },
   "result": {
-    "populationCovered": 15403279,
-    "townsCovered": 171,
-    "routeLengthKm": 397.915131,
-    "runtimeMillis": 93,
-    "routeStopIds": [468, 6870, 5397, 698, 184, 5618]
+    "populationCovered": 15417672,
+    "townsCovered": 188,
+    "routeLengthKm": 390.498306,
+    "runtimeMillis": 74,
+    "routeStopIds": [11350, 11288, 4775, 6950, 13648, 1332, 12787, 7465, 3468, 1708, 528, 3272, 701]
   },
   "statistics": {
     "cellSideKm": 50.500000,
     "gridCells": 37,
     "prunedSites": 6932,
-    "anchorsSelected": 38,
-    "heapPops": 243,
-    "stalePops": 205,
-    "cellRefreshes": 283,
-    "siteEvaluations": 71574,
+    "anchorsSelected": 45,
+    "heapPops": 302,
+    "stalePops": 257,
+    "cellRefreshes": 348,
+    "siteEvaluations": 86898,
     "anchorsSkipped": 32,
     "refilledStops": 0,
     "twoOptImprovements": 0
   },
   "finalRoute": [
-    {"visitOrder": 1, "candidateStopId": 468, "geonameId": 1734738, "name": "Tampin", "latitude": 2.470100, "longitude": 102.230200, "featureCode": "PPL"},
-    {"visitOrder": 2, "candidateStopId": 6870, "geonameId": 1770111, "name": "Kampung Bukit Serkam", "latitude": 2.146400, "longitude": 102.381600, "featureCode": "PPL"},
-    {"visitOrder": 3, "candidateStopId": 5397, "geonameId": 1767702, "name": "Kampung Labu Ulu", "latitude": 2.743600, "longitude": 101.844200, "featureCode": "PPL"},
-    {"visitOrder": 4, "candidateStopId": 698, "geonameId": 1735158, "name": "Petaling Jaya", "latitude": 3.107260, "longitude": 101.606710, "featureCode": "PPLA2"},
-    {"visitOrder": 5, "candidateStopId": 184, "geonameId": 1732891, "name": "Kuala Selangor", "latitude": 3.350000, "longitude": 101.250000, "featureCode": "PPL"},
-    {"visitOrder": 6, "candidateStopId": 5618, "geonameId": 1768034, "name": "Kampung Kuala Kerling", "latitude": 3.476410, "longitude": 101.555070, "featureCode": "PPL"}
+    {"visitOrder": 1, "candidateStopId": 11350, "geonameId": 7795819, "name": "Kampung Datuk Harun", "latitude": 3.367700, "longitude": 101.609600, "featureCode": "PPL"},
+    {"visitOrder": 2, "candidateStopId": 11288, "geonameId": 7794727, "name": "Kampung Gerachi", "latitude": 3.579500, "longitude": 101.705800, "featureCode": "PPL"},
+    {"visitOrder": 3, "candidateStopId": 4775, "geonameId": 1766612, "name": "Kampong Nyor", "latitude": 3.566670, "longitude": 101.550000, "featureCode": "PPL"},
+    {"visitOrder": 4, "candidateStopId": 6950, "geonameId": 1770211, "name": "Kampong Bukit Kuching", "latitude": 3.266670, "longitude": 101.333330, "featureCode": "PPL"},
+    {"visitOrder": 5, "candidateStopId": 13648, "geonameId": 12625526, "name": "Tropicana Indah", "latitude": 3.141650, "longitude": 101.590890, "featureCode": "PPL"},
+    {"visitOrder": 6, "candidateStopId": 1332, "geonameId": 1749822, "name": "Puchong", "latitude": 3.000000, "longitude": 101.616670, "featureCode": "PPL"},
+    {"visitOrder": 7, "candidateStopId": 12787, "geonameId": 8535635, "name": "Ladang Sepang Bahagian B dan C", "latitude": 2.717000, "longitude": 101.744100, "featureCode": "PPL"},
+    {"visitOrder": 8, "candidateStopId": 7465, "geonameId": 1771039, "name": "Kampung Baru C", "latitude": 2.618000, "longitude": 101.809400, "featureCode": "PPL"},
+    {"visitOrder": 9, "candidateStopId": 3468, "geonameId": 1764734, "name": "Kampung Sega Tengah", "latitude": 2.603200, "longitude": 101.936700, "featureCode": "PPL"},
+    {"visitOrder": 10, "candidateStopId": 1708, "geonameId": 1762318, "name": "Kampung Ulu Pegoh", "latitude": 2.418300, "longitude": 102.214200, "featureCode": "PPL"},
+    {"visitOrder": 11, "candidateStopId": 528, "geonameId": 1734838, "name": "Kampung Batu Kikir", "latitude": 2.829400, "longitude": 102.316600, "featureCode": "PPL"},
+    {"visitOrder": 12, "candidateStopId": 3272, "geonameId": 1764449, "name": "Kampung Sesapan Kelubi", "latitude": 2.878900, "longitude": 101.865700, "featureCode": "PPL"},
+    {"visitOrder": 13, "candidateStopId": 701, "geonameId": 1735161, "name": "Kuala Lumpur", "latitude": 3.141200, "longitude": 101.686530, "featureCode": "PPLC"}
   ]
 }

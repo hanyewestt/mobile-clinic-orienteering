@@ -4,7 +4,7 @@ import java.util.Objects;
 import java.util.List;
 import model.RunResult;
 
-/** Extra measurements needed to compare lazy and full-recompute Approach A runs. */
+/** Extra measurements from one Approach A run. */
 public record ApproachAResult(
         RunResult runResult,
         long candidateEvaluations,

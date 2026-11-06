@@ -9,11 +9,20 @@ import model.CandidateStop;
 import model.Coordinate;
 import model.Route;
 
-/** Improves a closed route through bounded 2-opt edge swaps. */
+/** Improves a closed route through 2-opt edge swaps, one swap per pass. */
 public final class TwoOptPolisher {
+    /** Pass limit meaning: keep going until no swap shortens the route. */
+    public static final int NO_PASS_LIMIT = Integer.MAX_VALUE;
     private static final double IMPROVEMENT_EPSILON = 1.0e-9;
 
     private TwoOptPolisher() {
+    }
+
+    /** Describes a pass limit for step traces. */
+    public static String describeLimit(int maximumPasses) {
+        return maximumPasses == NO_PASS_LIMIT
+                ? "until no swap shortens the route"
+                : "at most " + maximumPasses + " passes, one swap per pass";
     }
 
     /** Observes each applied 2-opt move; used for step traces only. */
