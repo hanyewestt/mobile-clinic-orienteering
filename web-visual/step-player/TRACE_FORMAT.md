@@ -13,7 +13,6 @@ From the project root, after compiling into `out/`:
 ```bash
 javac -d out $(find src -name '*.java')
 java -cp out trace.StepTraceMain data/processed 10 180 A-LAZY
-java -cp out trace.StepTraceMain data/processed 10 180 A-FULL
 java -cp out trace.StepTraceMain data/processed 10 180 B
 ```
 
@@ -81,7 +80,7 @@ outlines it and dashes the 3x3 block around it.
 ## Dashboard
 
 `web-visual/dashboard/index.html` reads every trace in `traces/manifest.js`,
-groups them by scenario (`r..-b..`) and compares `a-lazy`, `b` and `a-full`
+groups them by scenario (`r..-b..`) and compares `a-lazy` and `b`
 side by side: headline numbers, bars, a rough replay of how each route was
 built, counters, and a table of all scenarios. Generate both approaches for a
 scenario to see it there:

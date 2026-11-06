@@ -173,7 +173,6 @@ public final class ResultsWriter {
             writer.write("  \"scenario\": {\n");
             writer.write("    \"serviceRadiusKm\": " + decimal(outcome.config().serviceRadiusKm()) + ",\n");
             writer.write("    \"travelBudgetKm\": " + decimal(outcome.config().travelBudgetKm()) + ",\n");
-            writer.write("    \"scoreRefreshMode\": \"" + outcome.config().refreshMode() + "\",\n");
             writer.write("    \"maximumTwoOptPasses\": " + outcome.config().maximumTwoOptPasses() + ",\n");
             writer.write("    \"decisionTraceCaptured\": " + outcome.config().recordDecisionTrace() + ",\n");
             writer.write("    \"depot\": {\"latitude\": " + decimal(outcome.instance().depot().latitude())

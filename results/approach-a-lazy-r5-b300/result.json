@@ -5,7 +5,6 @@
   "scenario": {
     "serviceRadiusKm": 5.000000,
     "travelBudgetKm": 300.000000,
-    "scoreRefreshMode": "LAZY",
     "maximumTwoOptPasses": 2147483647,
     "decisionTraceCaptured": false,
     "depot": {"latitude": 3.141200, "longitude": 101.686500}

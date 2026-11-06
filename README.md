@@ -51,7 +51,7 @@ Requires Java 17 or later. From the project root:
 javac -d out $(find src -name '*.java')
 ```
 
-Standard results (`LAZY` or `FULL` for Approach A, `B` for Approach B):
+Standard results (`LAZY` for Approach A, `B` for Approach B):
 
 ```bash
 java -cp out experiments.ExperimentRunner data/processed results/approach-b-r10-b180 10 180 B
@@ -125,8 +125,8 @@ Both approaches must use this shared code for a fair comparison.
 ### `src/algorithms/`
 
 Contains the solvers only. `RoutingSolver` is the common interface;
-`LazyGreedySolver` implements Approach A in lazy and full-recompute modes and
-returns `ApproachAResult` statistics for the comparison experiment.
+`LazyGreedySolver` implements Approach A and returns `ApproachAResult`
+statistics for the comparison experiment.
 `GridClusterSolver` implements Approach B (hash grid of side about 2r,
 selection by new population per km of depot round trip with exact 3x3
 updates, then cheapest-insertion
@@ -137,7 +137,7 @@ instances of at most 15 candidate stops.
 ### `src/experiments/`
 
 Contains repeatable experiment code: configurations, budget/radius sweeps,
-lazy-versus-full comparisons, synthetic-data generation, and result collection.
+synthetic-data generation, and result collection.
 `ExperimentRunner` runs one Approach A or Approach B scenario and exports
 `summary.csv`, `route-stops.csv`, and `result.json`.
 

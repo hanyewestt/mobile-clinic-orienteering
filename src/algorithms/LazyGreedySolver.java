@@ -25,40 +25,32 @@ import trace.StepRecorder;
 
 /**
  * Approach A: select stops by marginal covered population per cheapest added
- * route distance. Scores can be refreshed lazily or fully after each selection.
+ * route distance. Scores are refreshed lazily, only when a site reaches the top of the heap.
  */
 public final class LazyGreedySolver implements RoutingSolver {
+    private static final String ALGORITHM_NAME = "Approach A - route-aware lazy greedy";
     private static final double SCORE_EPSILON = 1.0e-9;
 
-    private final ScoreRefreshMode refreshMode;
     private final int maximumTwoOptPasses;
     private final boolean recordDecisionTrace;
     private final StepRecorder steps;
 
-    public LazyGreedySolver(ScoreRefreshMode refreshMode, int maximumTwoOptPasses) {
-        this(refreshMode, maximumTwoOptPasses, false);
+    public LazyGreedySolver(int maximumTwoOptPasses) {
+        this(maximumTwoOptPasses, false);
     }
 
     /**
      * The optional trace audits decisions without contributing to their score or selection.
      */
-    public LazyGreedySolver(
-            ScoreRefreshMode refreshMode,
-            int maximumTwoOptPasses,
-            boolean recordDecisionTrace) {
-        this(refreshMode, maximumTwoOptPasses, recordDecisionTrace, StepRecorder.NONE);
+    public LazyGreedySolver(int maximumTwoOptPasses, boolean recordDecisionTrace) {
+        this(maximumTwoOptPasses, recordDecisionTrace, StepRecorder.NONE);
     }
 
     /**
      * The step recorder receives every heap pop and route change for the step
      * player. Like the decision trace, it never influences selection.
      */
-    public LazyGreedySolver(
-            ScoreRefreshMode refreshMode,
-            int maximumTwoOptPasses,
-            boolean recordDecisionTrace,
-            StepRecorder steps) {
-        this.refreshMode = Objects.requireNonNull(refreshMode, "refreshMode");
+    public LazyGreedySolver(int maximumTwoOptPasses, boolean recordDecisionTrace, StepRecorder steps) {
         if (maximumTwoOptPasses < 0) {
             throw new IllegalArgumentException("Solver limits must not be negative.");
         }
@@ -88,17 +80,10 @@ public final class LazyGreedySolver implements RoutingSolver {
         boolean[] reachable = RouteCalculator.reachableSites(
                 instance.depot(), instance.candidateStops(), instance.travelBudgetKm());
 
-        if (refreshMode == ScoreRefreshMode.LAZY) {
-            steps.phase("select", "Lazy greedy: pop the best-scoring site from a max-heap, re-score it on the "
-                    + "current route, and accept it only if it still beats the next heap entry.");
-            route = solveLazily(
-                    instance, coverageIndex, coverageTracker, reachable, accepted, deferred, route, statistics, decisionTrace);
-        } else {
-            steps.phase("select", "Full greedy: after every accepted stop, re-score every remaining site on the "
-                    + "current route and take the single best one that fits the budget.");
-            route = solveFully(
-                    instance, coverageIndex, coverageTracker, reachable, accepted, deferred, route, statistics, decisionTrace);
-        }
+        steps.phase("select", "Lazy greedy: pop the best-scoring site from a max-heap, re-score it on the "
+                + "current route, and accept it only if it still beats the next heap entry.");
+        route = solveLazily(
+                instance, coverageIndex, coverageTracker, reachable, accepted, deferred, route, statistics, decisionTrace);
 
         steps.phase("polish", "2-opt: reverse route segments when that shortens the tour ("
                 + TwoOptPolisher.describeLimit(maximumTwoOptPasses) + ").");
@@ -127,7 +112,7 @@ public final class LazyGreedySolver implements RoutingSolver {
                     route.totalDistanceKm(), route.stopIds().size(), runtimeMillis, counters);
         }
         RunResult runResult = new RunResult(
-                algorithmName(),
+                ALGORITHM_NAME,
                 route,
                 coverageTracker.coveredPopulation(),
                 coverageTracker.servedTownCount(),
@@ -237,109 +222,6 @@ public final class LazyGreedySolver implements RoutingSolver {
         }
 
         return route;
-    }
-
-    private Route solveFully(
-            ProblemInstance instance,
-            CoverageIndex coverageIndex,
-            CoverageTracker coverageTracker,
-            boolean[] reachable,
-            boolean[] accepted,
-            List<Integer> deferred,
-            Route route,
-            MutableStatistics statistics,
-            List<DecisionTrace> decisionTrace) {
-        while (true) {
-            CandidateChoice bestChoice = null;
-            CandidateChoice runnerUp = null;
-            int fittingCandidates = 0;
-            for (CandidateStop candidateStop : instance.candidateStops()) {
-                int candidateStopId = candidateStop.id();
-                if (accepted[candidateStopId] || !reachable[candidateStopId]) {
-                    continue;
-                }
-
-                long gain = coverageTracker.marginalPopulationGain(candidateStopId);
-                statistics.candidateEvaluations++;
-                if (gain == 0) {
-                    continue;
-                }
-
-                Insertion insertion = CheapestInsertion.findBest(
-                        route.stopIds(), candidateStopId, instance.depot(), instance.candidateStops());
-                if (!RouteCalculator.fitsBudget(
-                        route.totalDistanceKm(), insertion.addedDistanceKm(), instance.travelBudgetKm())) {
-                    continue;
-                }
-
-                fittingCandidates++;
-                CandidateChoice choice = new CandidateChoice(
-                        candidateStopId, insertion, score(gain, insertion.addedDistanceKm()));
-                if (bestChoice == null || choice.score() > bestChoice.score()) {
-                    runnerUp = bestChoice;
-                    bestChoice = choice;
-                } else if (runnerUp == null || choice.score() > runnerUp.score()) {
-                    runnerUp = choice;
-                }
-            }
-
-            if (bestChoice == null) {
-                steps.note("No remaining site both adds coverage and fits the budget. Selection ends.");
-                addOverBudgetCandidates(instance, coverageTracker, reachable, accepted, route, deferred, statistics);
-                return route;
-            }
-
-            if (steps.enabled()) {
-                steps.consider(bestChoice.candidateStopId(),
-                        coverageTracker.marginalPopulationGain(bestChoice.candidateStopId()),
-                        bestChoice.insertion().addedDistanceKm(), bestChoice.insertion().position(),
-                        bestChoice.score(), StepRecorder.ACCEPT,
-                        runnerUp == null ? -1 : runnerUp.candidateStopId(),
-                        runnerUp == null ? Double.NaN : runnerUp.score(),
-                        String.format(Locale.ROOT,
-                                "Re-scored all %d sites that add coverage and fit the budget; this one has the "
-                                        + "highest score. The rival shown is the runner-up.",
-                                fittingCandidates));
-            }
-            route = acceptStop(
-                    route,
-                    bestChoice.candidateStopId(),
-                    bestChoice.insertion(),
-                    instance,
-                    coverageIndex,
-                    coverageTracker,
-                    accepted,
-                    decisionTrace);
-        }
-    }
-
-    private void addOverBudgetCandidates(
-            ProblemInstance instance,
-            CoverageTracker coverageTracker,
-            boolean[] reachable,
-            boolean[] accepted,
-            Route route,
-            List<Integer> deferred,
-            MutableStatistics statistics) {
-        for (CandidateStop candidateStop : instance.candidateStops()) {
-            int candidateStopId = candidateStop.id();
-            if (accepted[candidateStopId] || !reachable[candidateStopId]
-                    || coverageTracker.marginalPopulationGain(candidateStopId) == 0) {
-                continue;
-            }
-            statistics.candidateEvaluations++;
-            Insertion insertion = CheapestInsertion.findBest(
-                    route.stopIds(), candidateStopId, instance.depot(), instance.candidateStops());
-            if (!RouteCalculator.fitsBudget(
-                    route.totalDistanceKm(), insertion.addedDistanceKm(), instance.travelBudgetKm())) {
-                deferred.add(candidateStopId);
-                steps.consider(candidateStopId, coverageTracker.marginalPopulationGain(candidateStopId),
-                        insertion.addedDistanceKm(), insertion.position(),
-                        score(coverageTracker.marginalPopulationGain(candidateStopId), insertion.addedDistanceKm()),
-                        StepRecorder.DEFER, -1, Double.NaN,
-                        "Still adds coverage but does not fit the remaining budget. Kept for the refill phase.");
-            }
-        }
     }
 
     private RefillOutcome refillDeferred(
@@ -525,12 +407,6 @@ public final class LazyGreedySolver implements RoutingSolver {
         if (coverageIndex.demandTownCount() != instance.demandTowns().size()) {
             throw new IllegalArgumentException("Coverage index and demand-town list have different sizes.");
         }
-    }
-
-    private String algorithmName() {
-        return refreshMode == ScoreRefreshMode.LAZY
-                ? "Approach A - route-aware lazy greedy"
-                : "Approach A - route-aware full greedy";
     }
 
     private record CandidateScore(int candidateStopId, double score) {

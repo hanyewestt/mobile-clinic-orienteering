@@ -54,8 +54,7 @@ Build the project in this order. Finish and test each step before moving to the 
    - Test distance, overlap handling, route budget, and return-to-depot logic.
 
 9. **Build the experiment runner**
-   - Run budget and radius sweeps, lazy-versus-full comparison, PPLX
-     sensitivity, depot/region checks, and synthetic scaling.
+   - Run budget and radius sweeps, PPLX sensitivity, depot/region checks, and synthetic scaling.
    - Save population covered, towns covered, route length, runtime, and
      relevant heap/grid statistics to CSV.
    - Run one Approach A scenario from the project root:

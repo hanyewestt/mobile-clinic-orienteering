@@ -15,7 +15,7 @@ import model.Coordinate;
 import model.DemandTown;
 import model.ProblemInstance;
 
-/** Small dependency-free check for both lazy and full versions of Approach A. */
+/** Small dependency-free check of Approach A. */
 public final class LazyGreedySolverSmokeTest {
     private LazyGreedySolverSmokeTest() {
     }
@@ -39,17 +39,13 @@ public final class LazyGreedySolverSmokeTest {
                 50.0);
         CoverageIndex coverageIndex = CoverageBuilder.build(candidates, demandTowns, instance.serviceRadiusKm());
 
-        ApproachAResult lazy = new LazyGreedySolver(ScoreRefreshMode.LAZY, 3)
-                .solveDetailed(instance, coverageIndex);
-        ApproachAResult full = new LazyGreedySolver(ScoreRefreshMode.FULL, 3)
+        ApproachAResult lazy = new LazyGreedySolver(3)
                 .solveDetailed(instance, coverageIndex);
 
         verifyResult(lazy, "lazy");
-        verifyResult(full, "full");
         check(lazy.heapPops() > 0, "Lazy mode must use heap pops.");
-        check(full.heapPops() == 0, "Full mode must not use a heap.");
 
-        ApproachAResult traced = new LazyGreedySolver(ScoreRefreshMode.LAZY, 3, true)
+        ApproachAResult traced = new LazyGreedySolver(3, true)
                 .solveDetailed(instance, coverageIndex);
         check(traced.decisionTrace().size() == 2, "Trace mode must record each accepted stop.");
         DecisionTrace firstDecision = traced.decisionTrace().get(0);
