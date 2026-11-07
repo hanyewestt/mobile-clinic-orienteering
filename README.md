@@ -63,6 +63,25 @@ Step traces for the step player and dashboard:
 java -cp out trace.StepTraceMain data/processed 10 180 B
 ```
 
+### Ten-town walkthrough
+
+`data/mini-10/` is a deliberately small, hand-checkable teaching instance:
+ten demand towns and ten matching candidate clinic sites around the Kuala
+Lumpur depot.  A 6 km service radius means each selected clinic normally
+serves its same-named town, while a 60 km travel budget forces the solvers to
+make trade-offs. Generate both traces and choose either one in the **Solver
+Step Player** menu:
+
+```bash
+java -cp out trace.StepTraceMain data/mini-10 6 60 A-LAZY
+java -cp out trace.StepTraceMain data/mini-10 6 60 B
+```
+
+Use **Every step** to inspect every candidate calculation, **Next stop** to
+move from one accepted route change to the next, and click any recent step to
+jump straight to it. The right panel shows the gain, extra route distance,
+score, and the solver's reason for that decision.
+
 View the pages through a local server, then open
 `http://localhost:8765/dashboard/index.html` or
 `http://localhost:8765/step-player/index.html`:
