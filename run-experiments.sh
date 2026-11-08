@@ -15,7 +15,8 @@ javac -d out-test -cp out $(find test -name '*.java')
 echo "== 2. Tests =="
 for t in coverage.CoverageSmokeTest routing.RoutingSmokeTest data.ProcessedInstanceLoaderSmokeTest \
          algorithms.HeldKarpSolverSmokeTest algorithms.LazyGreedySolverSmokeTest \
-         algorithms.GridClusterSolverSmokeTest experiments.ExperimentRunnerSmokeTest; do
+         algorithms.GridClusterSolverSmokeTest experiments.ExperimentRunnerSmokeTest \
+         algorithms.CorrectnessRegressionTest; do
   java -ea -cp "out${SEP}out-test" "$t"
 done
 

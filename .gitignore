@@ -26,3 +26,6 @@ replay_pid*
 
 # Test classes
 out-test/
+
+# macOS
+.DS_Store

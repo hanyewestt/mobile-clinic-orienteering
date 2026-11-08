@@ -67,7 +67,8 @@ mobile-clinic-orienteering/
 ├── run-experiments.sh / .bat   reproduce every experiment in the slides
 ├── data/
 │   ├── raw/MY.txt              GeoNames Malaysia file, unchanged
-│   └── processed/              candidate-stops.csv (~14,000), demand-towns.csv (636)
+│   ├── processed/              candidate-stops.csv (~14,000), demand-towns.csv (636)
+│   └── mini-10/                ten-town teaching instance for the step player
 ├── results/                    one folder per experiment (see the table above)
 ├── src/
 │   ├── Main.java
@@ -79,7 +80,7 @@ mobile-clinic-orienteering/
 │   ├── algorithms/
 │   ├── experiments/
 │   └── trace/
-├── test/                       smoke tests, one per package
+├── test/                       smoke tests and CorrectnessRegressionTest (40 checks)
 └── web-visual/                 optional viewer, not needed for the experiments
     ├── step-player/            step-by-step replay of any run, plus traces/
     └── dashboard/              A vs B comparison page
@@ -113,18 +114,28 @@ On Windows Command Prompt:
 dir /s /b src\*.java > sources.txt && javac -d out @sources.txt
 ```
 
-Tests (each prints "... smoke test passed."; use `;` instead of `:` in the
-classpath on Windows):
+Tests (use `;` instead of `:` in the classpath on Windows):
 
 ```bash
 javac -d out-test -cp out $(find test -name '*.java')
 java -ea -cp out:out-test routing.RoutingSmokeTest
+java -ea -cp out:out-test algorithms.CorrectnessRegressionTest
 ```
 
-The test classes are `coverage.CoverageSmokeTest`, `routing.RoutingSmokeTest`,
+The smoke tests are `coverage.CoverageSmokeTest`, `routing.RoutingSmokeTest`,
 `data.ProcessedInstanceLoaderSmokeTest`, `algorithms.HeldKarpSolverSmokeTest`,
 `algorithms.LazyGreedySolverSmokeTest`, `algorithms.GridClusterSolverSmokeTest`
-and `experiments.ExperimentRunnerSmokeTest`.
+and `experiments.ExperimentRunnerSmokeTest`; each prints "... smoke test
+passed.".
+
+`algorithms.CorrectnessRegressionTest` is the correctness test in the slides.
+On a small hand-checked instance it runs 40 checks: coverage gains without
+double counting, the cheapest-insertion formula against a full route
+recomputation, the budget limit, route validity (no duplicates, returns to
+the depot), and an independent recount of both solvers' final population,
+towns and route length. It ends with `RESULT: PASS - 40/40 checks passed.`;
+the expected output is saved in
+`test/algorithms/CorrectnessRegressionTestResult.txt`.
 
 Re-create the processed data from `data/raw/MY.txt` (optional; the output is
 already included):

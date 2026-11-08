@@ -14,7 +14,7 @@ javac -d out-test -cp out @tests.txt || goto :fail
 del sources.txt tests.txt
 
 echo == 2. Tests ==
-for %%t in (coverage.CoverageSmokeTest routing.RoutingSmokeTest data.ProcessedInstanceLoaderSmokeTest algorithms.HeldKarpSolverSmokeTest algorithms.LazyGreedySolverSmokeTest algorithms.GridClusterSolverSmokeTest experiments.ExperimentRunnerSmokeTest) do (
+for %%t in (coverage.CoverageSmokeTest routing.RoutingSmokeTest data.ProcessedInstanceLoaderSmokeTest algorithms.HeldKarpSolverSmokeTest algorithms.LazyGreedySolverSmokeTest algorithms.GridClusterSolverSmokeTest experiments.ExperimentRunnerSmokeTest algorithms.CorrectnessRegressionTest) do (
   java -ea -cp "out;out-test" %%t || goto :fail
 )
 
