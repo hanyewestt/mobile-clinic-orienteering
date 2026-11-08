@@ -1,2 +1,2 @@
 run_name,algorithm,service_radius_km,travel_budget_km,population_covered,towns_covered,route_length_km,selected_stops,runtime_ms,cell_side_km,grid_cells,pruned_sites,anchors_selected,heap_pops,stale_pops,cell_refreshes,site_evaluations,anchors_skipped,refilled_stops,two_opt_improvements
-"approach-b-r25-b400","Approach B - grid clusters, then route",25.000000,400.000000,15417672,188,390.498306,13,74,50.500000,37,6932,45,302,257,348,86898,32,0,0
+"approach-b-r5-b100","Approach B - grid clusters, then route",5.000000,100.000000,10241403,65,95.022396,12,65,10.100000,58,6706,45,239,194,320,7022,34,1,3

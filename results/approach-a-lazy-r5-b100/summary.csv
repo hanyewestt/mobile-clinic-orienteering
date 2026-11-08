@@ -1,2 +1,2 @@
 run_name,algorithm,service_radius_km,travel_budget_km,population_covered,towns_covered,route_length_km,selected_stops,runtime_ms,candidate_evaluations,heap_pops,deferred_stops,refilled_stops,two_opt_improvements
-"approach-a-lazy-r10-b180-trace","Approach A - route-aware lazy greedy",10.000000,180.000000,12413701,99,177.479101,25,135,4629,2953,1676,0,0
+"approach-a-lazy-r5-b100","Approach A - route-aware lazy greedy",5.000000,100.000000,10278403,67,99.705623,20,105,3136,996,536,2,2

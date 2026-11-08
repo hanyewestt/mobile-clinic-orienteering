@@ -1,0 +1,7 @@
+service_radius_km,travel_budget_km,algorithm,runs,warm_up_runs,first_run_ms,warm_median_ms,warm_min_ms,warm_max_ms,population_covered
+5,100,Approach A,40,20,106.353,24.265,21.160,29.213,10278403
+5,100,Approach B,40,20,19.579,4.194,3.732,5.124,10241403
+5,200,Approach A,40,20,106.036,71.589,68.416,79.881,11863050
+5,200,Approach B,40,20,6.063,5.344,4.815,6.102,12034400
+5,300,Approach A,40,20,146.894,140.756,138.577,144.102,12751189
+5,300,Approach B,40,20,8.444,8.636,8.180,11.553,13130153
