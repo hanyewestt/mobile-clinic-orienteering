@@ -1,0 +1,60 @@
+
+=== 1. COVERAGE TESTS ===
+PASS | A initial gain | expected: 1500 | actual: 1500
+PASS | B initial gain | expected: 1300 | actual: 1300
+PASS | A applied gain | expected: 1500 | actual: 1500
+PASS | B after A | expected: 800 | actual: 800
+PASS | B applied after A | expected: 800 | actual: 800
+PASS | A then B total | expected: 2300 | actual: 2300
+PASS | A fully redundant | expected: 0 | actual: 0
+PASS | B fully redundant | expected: 0 | actual: 0
+PASS | B then A total | expected: 2300 | actual: 2300
+
+=== 2. CHEAPEST INSERTION AND BUDGET TESTS ===
+PASS | edge insertion formula at position 0 | expected: 28.479831 | actual: 28.479831
+PASS | whole-route delta at position 0 | expected: 28.479831 | actual: 28.479831
+PASS | edge insertion formula at position 1 | expected: 14.460125 | actual: 14.460125
+PASS | whole-route delta at position 1 | expected: 14.460125 | actual: 14.460125
+PASS | edge insertion formula at position 2 | expected: 14.460125 | actual: 14.460125
+PASS | whole-route delta at position 2 | expected: 14.460125 | actual: 14.460125
+PASS | cheapest insertion position | expected: 1 | actual: 1
+PASS | cheapest insertion cost | expected: 14.460125 | actual: 14.460125
+PASS | overbudget insertion rejected | expected: true | actual: true
+PASS | original route remains unchanged | expected: 2 | actual: 2
+PASS | duplicate stop insertion rejected | expected: true | actual: true
+
+=== 3. ALGORITHM A AND B FINAL RESULTS ===
+
+=== Algorithm A ===
+Selected stop IDs: [1, 0]
+Reported route length: 22.239 km
+Reported covered population: 2300
+Reported towns covered: 3
+PASS | A: no duplicate stops | expected: true | actual: true
+PASS | A: within travel budget | expected: true | actual: true
+PASS | A: valid stop ID | expected: true | actual: true
+PASS | A: valid stop ID | expected: true | actual: true
+PASS | A: sum of edges includes return to depot | expected: 22.239016 | actual: 22.239016
+PASS | A: independently recomputed covered population | expected: 2300 | actual: 2300
+PASS | A: independently recomputed town count | expected: 3 | actual: 3
+PASS | A: every accepted stop adds population | expected: true | actual: true
+PASS | A: every accepted insertion fits budget | expected: true | actual: true
+PASS | A: trace marginal gain consistent | expected: 1500 | actual: 1500
+PASS | A: every accepted stop adds population | expected: true | actual: true
+PASS | A: every accepted insertion fits budget | expected: true | actual: true
+PASS | A: trace marginal gain consistent | expected: 800 | actual: 800
+
+=== Algorithm B ===
+Selected stop IDs: [1, 0]
+Reported route length: 22.239 km
+Reported covered population: 2300
+Reported towns covered: 3
+PASS | B: no duplicate stops | expected: true | actual: true
+PASS | B: within travel budget | expected: true | actual: true
+PASS | B: valid stop ID | expected: true | actual: true
+PASS | B: valid stop ID | expected: true | actual: true
+PASS | B: sum of edges includes return to depot | expected: 22.239016 | actual: 22.239016
+PASS | B: independently recomputed covered population | expected: 2300 | actual: 2300
+PASS | B: independently recomputed town count | expected: 3 | actual: 3
+
+RESULT: PASS - 40/40 checks passed.

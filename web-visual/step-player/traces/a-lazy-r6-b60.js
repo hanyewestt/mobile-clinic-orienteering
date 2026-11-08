@@ -1,0 +1,36 @@
+window.STEP_TRACE = {
+"schemaVersion":1,
+"name":"a-lazy-r6-b60",
+"algorithm":"Approach A - route-aware lazy greedy",
+"instance":"Peninsular Malaysia",
+"radiusKm":6.000,
+"budgetKm":60.000,
+"depot":[3.14120,101.68650],
+"sites":[[3.18300,101.69500,"Sentul Clinic"],[3.19900,101.72300,"Setapak Clinic"],[3.15700,101.75900,"Ampang Clinic"],[3.08300,101.74400,"Cheras Clinic"],[3.10700,101.64400,"Petaling Jaya Clinic"],[3.07300,101.51800,"Shah Alam Clinic"],[3.04300,101.45100,"Klang Clinic"],[3.32100,101.57600,"Rawang Clinic"]
+,[2.99300,101.78900,"Kajang Clinic"],[3.04600,101.62500,"Puchong Clinic"]],
+"towns":[[3.18000,101.69000,28000,"Sentul"],[3.20500,101.72500,22000,"Setapak"],[3.15500,101.75500,26000,"Ampang"],[3.08000,101.74500,32000,"Cheras"],[3.10500,101.65000,35000,"Petaling Jaya"],[3.07500,101.52000,24000,"Shah Alam"]
+,[3.04000,101.45500,30000,"Klang"],[3.32000,101.58000,18000,"Rawang"],[2.99500,101.78500,27000,"Kajang"],[3.05000,101.63000,21000,"Puchong"]],
+"events":[
+{"kind":"phase","name":"select","text":"Lazy greedy: pop the best-scoring site from a max-heap, re-score it on the current route, and accept it only if it still beats the next heap entry."},
+{"kind":"note","text":"Heap built with 10 reachable sites that cover at least one town. Each starts with score = population within r / (2 x distance from depot), i.e. the cost of a solo round trip."},
+{"kind":"consider","site":0,"gain":50000,"addedKm":9.486,"position":0,"score":5271.16,"outcome":"accept","rival":1,"rivalScore":3290.35,"text":"Its fresh score is still at least the best score left in the heap, so (lazily) nothing else can beat it. Accepted."},
+{"kind":"insert","site":0,"position":0,"addedKm":9.486,"gain":50000,"towns":[0,1],"routeKm":9.486,"text":"Inserted at route position 1. 2 new towns served; route is now 9.5 of 60.0 km."},
+{"kind":"consider","site":1,"gain":0,"addedKm":null,"position":null,"score":0.00,"outcome":"skip","text":"Every town within r of this site is already served by earlier stops, so it is dropped."},
+{"kind":"consider","site":4,"gain":35000,"addedKm":11.490,"position":0,"score":3046.10,"outcome":"accept","rival":3,"rivalScore":1760.05,"text":"Its fresh score is still at least the best score left in the heap, so (lazily) nothing else can beat it. Accepted."},
+{"kind":"insert","site":4,"position":0,"addedKm":11.490,"gain":35000,"towns":[4],"routeKm":20.976,"text":"Inserted at route position 1. 1 new towns served; route is now 21.0 of 60.0 km."},
+{"kind":"consider","site":3,"gain":32000,"addedKm":13.626,"position":1,"score":2348.44,"outcome":"accept","rival":2,"rivalScore":1577.87,"text":"Its fresh score is still at least the best score left in the heap, so (lazily) nothing else can beat it. Accepted."},
+{"kind":"insert","site":3,"position":1,"addedKm":13.626,"gain":32000,"towns":[3],"routeKm":34.602,"text":"Inserted at route position 2. 1 new towns served; route is now 34.6 of 60.0 km."},
+{"kind":"consider","site":2,"gain":26000,"addedKm":3.687,"position":2,"score":7050.96,"outcome":"accept","rival":9,"rivalScore":833.52,"text":"Its fresh score is still at least the best score left in the heap, so (lazily) nothing else can beat it. Accepted."},
+{"kind":"insert","site":2,"position":2,"addedKm":3.687,"gain":26000,"towns":[2],"routeKm":38.289,"text":"Inserted at route position 3. 1 new towns served; route is now 38.3 of 60.0 km."},
+{"kind":"consider","site":9,"gain":21000,"addedKm":9.523,"position":1,"score":2205.21,"outcome":"accept","rival":8,"rivalScore":674.08,"text":"Its fresh score is still at least the best score left in the heap, so (lazily) nothing else can beat it. Accepted."},
+{"kind":"insert","site":9,"position":1,"addedKm":9.523,"gain":21000,"towns":[9],"routeKm":47.812,"text":"Inserted at route position 2. 1 new towns served; route is now 47.8 of 60.0 km."},
+{"kind":"consider","site":8,"gain":27000,"addedKm":16.487,"position":2,"score":1637.64,"outcome":"defer","text":"Even its cheapest insertion would make the route 64.3 km, over the 60.0 km budget. Moved to the deferred list and not pushed back."},
+{"kind":"consider","site":5,"gain":24000,"addedKm":19.643,"position":1,"score":1221.81,"outcome":"defer","text":"Even its cheapest insertion would make the route 67.5 km, over the 60.0 km budget. Moved to the deferred list and not pushed back."},
+{"kind":"consider","site":6,"gain":30000,"addedKm":34.801,"position":1,"score":862.05,"outcome":"defer","text":"Even its cheapest insertion would make the route 82.6 km, over the 60.0 km budget. Moved to the deferred list and not pushed back."},
+{"kind":"consider","site":7,"gain":18000,"addedKm":38.962,"position":5,"score":461.99,"outcome":"defer","text":"Even its cheapest insertion would make the route 86.8 km, over the 60.0 km budget. Moved to the deferred list and not pushed back."},
+{"kind":"phase","name":"polish","text":"2-opt: reverse route segments when that shortens the tour (until no swap shortens the route)."},
+{"kind":"note","text":"2-opt found no move that shortens the route."},
+{"kind":"phase","name":"refill","text":"Refill: retry the deferred sites with whatever budget is left, best score first. When none fit, run 2-opt again; if that saves km, retry."},
+{"kind":"note","text":"None of the 4 deferred sites both adds coverage and fits the 12.19 km left. Done."},
+{"kind":"result","populationCovered":164000,"townsCovered":6,"routeKm":47.812,"stops":5,"runtimeMs":16,"stats":{"Heap pops":10,"Candidate evaluations":14,"Deferred sites":4,"Refilled stops":0,"2-opt improvements":0}}
+]};
